@@ -1,0 +1,1186 @@
+:root {
+  --bg: #0b0b0f;
+  --surface: #15151c;
+  --surface-2: #1c1c24;
+  --border: #2a2a33;
+  --text: #f4f4f5;
+  --muted: #8b8b96;
+  --up: #22c55e;
+  --down: #ef4444;
+  --accent: #f59e0b;
+  --accent-2: #a855f7;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.app {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 24px clamp(12px, 1.25vw, 20px) 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.up {
+  color: var(--up);
+}
+
+.down {
+  color: var(--down);
+}
+
+/* Live status */
+
+.live-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.live-status__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.currency-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Header */
+
+/* Three columns so the total stays centered regardless of the gain card width. */
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header__aside {
+  align-self: start;
+}
+
+.header__total {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.header .gain-card {
+  justify-self: end;
+}
+
+@media (max-width: 640px) {
+  .header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .header__total {
+    grid-column: auto;
+  }
+
+  .header .gain-card {
+    justify-self: center;
+  }
+}
+
+.header__value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header__value strong {
+  font-size: clamp(28px, 5vw, 40px);
+  background: linear-gradient(90deg, #fb923c, #f472b6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.header__change {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.gain-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  padding: 10px 16px;
+  text-align: center;
+  border: 1px solid var(--up);
+  border-radius: 12px;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+.gain-card--down {
+  border-color: var(--down);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+}
+
+.gain-card strong {
+  font-size: 18px;
+  color: var(--up);
+}
+
+.gain-card--down strong {
+  color: var(--down);
+}
+
+.gain-card small {
+  font-size: 12px;
+}
+
+.gain-card__annualized {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gain-card__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.gain-card__breakdown div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.gain-card__breakdown dt {
+  color: var(--muted);
+}
+
+.gain-card__breakdown dd {
+  margin: 0;
+}
+
+/* Cards and charts */
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .charts {
+    grid-template-columns: 1.6fr 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card__scope {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Fills the card so the chart matches the height of the allocation card. */
+.chart--area {
+  flex: 1;
+  min-height: 300px;
+}
+
+/* `flex: 1` fills the allocation card, where it replaces the whole chart. */
+.chart__empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.chart__note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chart__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chart__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Matches the dashed "Aportado" line. */
+.chart__dash {
+  width: 16px;
+  border-top: 2px dashed var(--muted);
+}
+
+/* The price chart of an asset's detail, with its buys and sells marked. */
+.chart--price {
+  height: 220px;
+}
+
+.chart__summary--price {
+  margin: -4px 0 0;
+}
+
+/* Match the triangles that mark the trades on the price chart. */
+.chart__mark {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+.chart__mark--buy {
+  border-bottom: 8px solid var(--up);
+}
+
+.chart__mark--sell {
+  margin-left: 6px;
+  border-top: 8px solid var(--down);
+}
+
+.chart__legend .chart__dash {
+  margin-left: 6px;
+}
+
+.chart--donut {
+  width: 100%;
+}
+
+.allocation {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(160px, 260px) auto;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.legend__dot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend--columns {
+  grid-template-columns: repeat(2, auto);
+  column-gap: 28px;
+}
+
+/* "Otros" in the legend: a button that expands the group. */
+.legend__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.legend__toggle:hover {
+  color: var(--accent);
+}
+
+.chart-tooltip {
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.chart-tooltip ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
+
+.chart-tooltip li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-tooltip .legend__dot {
+  width: 8px;
+  height: 8px;
+}
+
+@media (max-width: 480px) {
+  .allocation {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 20px;
+  }
+
+  .chart--donut {
+    max-width: 220px;
+  }
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.segmented button {
+  padding: 4px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* Assets */
+
+.assets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assets__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.assets__toolbar h3 {
+  font-size: 18px;
+}
+
+.tabs {
+  display: flex;
+  gap: 20px;
+}
+
+.tabs button {
+  padding: 6px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.tabs button[aria-selected='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, #f59e0b, #fb923c);
+  border: none;
+  border-radius: 999px;
+  color: #111;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Asset detail drawer */
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(520px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  animation: drawer-in 0.2s ease-out;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.drawer__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.drawer__header .asset-name {
+  flex-wrap: wrap;
+}
+
+.drawer__header h3 {
+  font-size: 18px;
+}
+
+.drawer__price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.drawer__price strong {
+  font-size: 28px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.stats div {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.stats dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stats dd {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.color-picker {
+  position: relative;
+  display: flex;
+}
+
+.color-picker__swatch {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Small and quiet until hovered: it's a setting, not part of the data. */
+.color-picker__trigger {
+  width: 14px;
+  height: 14px;
+  transition: box-shadow 0.15s;
+}
+
+.color-picker__trigger:hover,
+.color-picker__trigger[aria-expanded='true'] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--muted);
+}
+
+.color-picker__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 20px);
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* A ring with a gap, so it reads on any swatch color. */
+.color-picker__swatch[aria-pressed='true'],
+.color-picker__swatch.is-selected {
+  box-shadow:
+    0 0 0 2px var(--surface-2),
+    0 0 0 4px var(--text);
+}
+
+.color-picker__swatch:focus-visible,
+.color-picker__custom:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.color-picker__custom {
+  overflow: hidden;
+  background: conic-gradient(#f87171, #facc15, #4ade80, #22d3ee, #818cf8, #e879f9, #f87171);
+}
+
+/* Invisible but covering the swatch, so a click opens the native picker anchored there. */
+.color-picker__custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drawer__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer__section-header h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.orders {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.order__type {
+  flex-shrink: 0;
+  width: 64px;
+  padding: 2px 0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.order__type--buy {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--up);
+}
+
+.order__type--sell {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--down);
+}
+
+.order__type--deposit {
+  background: rgba(163, 230, 53, 0.15);
+  color: #a3e635;
+}
+
+.order__type--withdrawal {
+  background: rgba(139, 139, 150, 0.2);
+  color: var(--text);
+}
+
+.order__type--income {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--accent-2);
+}
+
+.order__type--split {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* Keeps rows aligned where a movement can't be changed from this panel: as wide as `.order__actions`. */
+.order__delete-placeholder {
+  flex-shrink: 0;
+  width: 52px;
+}
+
+.drawer__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.drawer__actions .ghost-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.order__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.order__meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.order__result {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.order__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.order__edit,
+.order__delete {
+  flex-shrink: 0;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.order__delete:hover,
+.order__delete.is-armed {
+  color: var(--down);
+}
+
+.order__edit:hover {
+  color: var(--text);
+}
+
+.drawer__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: none;
+  border: 1px solid var(--down);
+  border-radius: 999px;
+  color: var(--down);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-button.is-armed {
+  background: var(--down);
+  color: #fff;
+}
+
+/* Catalog panel */
+
+.assets__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.catalog__name {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.catalog__editing {
+  margin: 8px 0;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.catalog__form input {
+  background: var(--surface);
+}
+
+/* Keeps the pencils aligned on assets that can't be deleted: as wide as the trash button. */
+.catalog__no-delete {
+  width: 24px;
+}
+
+.add-button--small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal__form label,
+.modal__form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.modal__form input,
+.modal__form select {
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.asset-picker {
+  position: relative;
+}
+
+.asset-picker input {
+  width: 100%;
+}
+
+.asset-picker__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.asset-picker__list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.asset-picker__list button:hover {
+  background: var(--border);
+}
+
+.asset-picker__name {
+  flex: 1;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-picker__type {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.asset-picker__new {
+  color: var(--accent);
+}
+
+.asset-picker__hint {
+  padding: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* A text button next to a field's label, like "Vender todo". */
+.field__action {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.field__action:hover {
+  text-decoration: underline;
+}
+
+/* Wraps on narrow screens instead of squeezing six transaction types into one row. */
+.segmented--full {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.segmented--full button {
+  flex: 1;
+}
+
+.modal__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.modal__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--down);
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ghost-button {
+  padding: 10px 18px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.add-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+
+table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: left;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Column headers sort the table; the active one shows its direction. */
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sort-button:hover,
+.sort-button--active {
+  color: var(--text);
+}
+
+.num {
+  text-align: right;
+}
+
+tbody tr:hover {
+  background: var(--surface);
+}
+
+.assets__row {
+  cursor: pointer;
+}
+
+.asset-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.asset-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ticker {
+  margin-left: 4px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.badge {
+  padding: 2px 8px;
+  border: 1px solid #5b2333;
+  border-radius: 999px;
+  background: #2a141c;
+  color: #f9a8b4;
+  font-size: 11px;
+}
+
+.bar {
+  width: 90px;
+  height: 4px;
+  margin: 6px 0 0 auto;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent-2);
+}
+
+.chevron-button {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.assets__closed button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+}

@@ -1,0 +1,11 @@
+[
+  {
+    "symbol": "USDT",
+    "name": "Tether",
+    "type": "crypto",
+    "category": "Stablecoin",
+    "color": "#2dd4bf",
+    "price": 1,
+    "change24h": 0.01
+  }
+]
