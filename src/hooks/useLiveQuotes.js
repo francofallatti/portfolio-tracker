@@ -77,5 +77,8 @@ export function useLiveQuotes(assets) {
     .filter((asset) => isLiveCrypto(asset) || (FINNHUB_API_KEY && isStock(asset)))
     .every((asset) => quotes[asset.symbol])
 
-  return { quotes: latestQuotes, cryptoStatus, stockStatus, ready }
+  // Without crypto to follow, the stream never opens: there's nothing to wait for.
+  const hasLiveCrypto = assets.some(isLiveCrypto)
+
+  return { quotes: latestQuotes, cryptoStatus: hasLiveCrypto ? cryptoStatus : 'idle', stockStatus, ready }
 }

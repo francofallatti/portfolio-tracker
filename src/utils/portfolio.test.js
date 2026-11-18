@@ -16,6 +16,7 @@ import {
   getDayChange,
   getResults,
   getTotals,
+  toLocalUnits,
   usedSymbols,
 } from './portfolio.js'
 
@@ -158,6 +159,18 @@ describe('fromPesos', () => {
 
   it('keeps 8 decimals of shares, so 100 CEDEARs (144 per share) are 0.69444444', () => {
     expect(fromPesos({ units: 100, arsPrice: 2772.5, ratio: 144, ccl: 1650.3 }).quantity).toBe(0.69444444)
+  })
+})
+
+describe('toLocalUnits', () => {
+  it('gives back the CEDEARs of a holding without the rounding leftover', () => {
+    // 100 CEDEARs (144 per share) are saved as 0.69444444 shares: × 144 is 99.99999936.
+    expect(toLocalUnits(0.69444444, 144)).toBe(100)
+    expect(toLocalUnits(fromPesos({ units: 37, arsPrice: 1, ratio: 58, ccl: 1 }).quantity, 58)).toBe(37)
+  })
+
+  it('keeps the units of a holding that is not a whole number of them', () => {
+    expect(toLocalUnits(1.5, 3)).toBe(4.5)
   })
 })
 

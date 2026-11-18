@@ -2,3 +2,6 @@ node_modules
 dist
 .env.local
 src/data/history.json
+
+# Broker exports and personal spreadsheets used to load the real data.
+import_data/

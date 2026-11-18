@@ -21,7 +21,6 @@ Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo h
 
 Hoy solo funciona con `npm run dev` en esta PC. Es el cambio más grande; vale la pena solo si se va a usar desde otro lado (por ejemplo el celular).
 
-
 - [ ] **Base de datos real** (por ejemplo Supabase) en lugar de los JSON.
 - [ ] **Login**: son datos financieros.
 - [ ] **Deploy** (Vercel o Netlify, gratis) con una función que esconda la key de Finnhub.
@@ -51,7 +50,6 @@ Mantenimiento:
 - [ ] **Colores fijos en los componentes** (por ejemplo `HistoryChart.jsx`) que duplican los tokens de `App.css`.
 - [ ] **Agregar `.gitattributes`**: git avisa de cambios de fin de línea (LF a CRLF) en varios archivos.
 - [ ] **Limpieza chica:**
-  - `.env.example` no existe, pero `CLAUDE.md` lo menciona.
   - Quedan comentarios que hablan del MEP (`App.jsx`, `useMoney.js`), y `fetchDollarRates` falla si falta el MEP aunque solo se usa el CCL.
   - "Sin API key (datos de ejemplo)" en `LiveStatus` ya no es cierto: son datos reales con precios guardados.
 
@@ -103,4 +101,4 @@ Mantenimiento:
 
 ### 6. Ideas extra
 
-- [x] **Ver los montos en pesos.** Selector "USD | ARS" en el encabezado, al dólar CCL de hoy de dolarapi.com (el dólar con el que cotizan los CEDEARs). Convierte los valores (total, tabla, gráficos, resúmenes); los registros de órdenes y movimientos quedan en dólares ("US$").
+- [x] **Ver los montos en pesos.** Selector "USD | ARS" en el encabezado, al dólar CCL de hoy de dolarapi.com (empezó con el MEP; el CCL coincide con los pesos del broker). Convierte los valores (total, tabla, gráficos, resúmenes); los registros de órdenes y movimientos quedan en dólares ("US$").

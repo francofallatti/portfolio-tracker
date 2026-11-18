@@ -876,6 +876,11 @@ h3 {
 .modal {
   width: 100%;
   max-width: 440px;
+  /* A form taller than the window scrolls inside, so the save button stays reachable. */
+  max-height: calc(100dvh - 32px);
+  overflow: hidden auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
   padding: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -983,8 +988,14 @@ h3 {
 
 .modal__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, …): a number input's default width must not push its column past the modal. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
+}
+
+.modal__row input {
+  width: 100%;
+  min-width: 0;
 }
 
 .field__label {

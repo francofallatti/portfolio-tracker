@@ -27,6 +27,11 @@ export function fromPesos({ units, arsPrice, arsFee = 0, ratio, ccl }) {
   }
 }
 
+// The way back: how many local units (CEDEARs, local shares) `quantity` shares are. Shares
+// keep 8 decimals, so multiplying by the ratio brings back a leftover (0.69444444 × 144 =
+// 99.99999936): 4 decimals drop it for any real ratio.
+export const toLocalUnits = (quantity, ratio) => Math.round(quantity * ratio * 1e4) / 1e4
+
 // A trade's quantity, unit price and total are tied (total = quantity × price). Given two
 // of them, this is `field`, the third; null while the other two aren't both positive.
 // The price keeps 8 decimals, so quantity × price gives back the total paid, and cheap

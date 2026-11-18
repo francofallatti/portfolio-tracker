@@ -5,7 +5,7 @@ import { useCloseOnEscape } from '../hooks/useCloseOnEscape.js'
 import { toCatalogAsset } from '../services/assetCatalog.js'
 import { fetchCclOn } from '../services/dolarApi.js'
 import { formatARS, formatQuantity, formatUSD } from '../utils/format.js'
-import { STABLECOIN, deriveTradeField, fromPesos, roundQuantity, splitRatio } from '../utils/portfolio.js'
+import { STABLECOIN, deriveTradeField, fromPesos, roundQuantity, splitRatio, toLocalUnits } from '../utils/portfolio.js'
 
 const TYPES = [
   { key: 'buy', label: 'Compra' },
@@ -28,32 +28,40 @@ const now = () => {
 
 // A trade entered in pesos (see `inPesos`): units, price and fee in pesos, the ratio
 // (empty: the asset's) and the CCL of the day.
-const EMPTY_PESOS = { units: '', arsPrice: '', arsFee: '', ratio: '', ccl: '' }
-
-// A trade in dollars has three tied fields (total = quantity × price). The two typed last
-// (`tradeInputs`, oldest first) stay, and the third is calculated: quantity and price give
-// the total, and typing what was paid gives the price (or the quantity).
-const TRADE_FIELDS = ['quantity', 'price', 'total']
+// A trade has three tied fields (total = quantity × price), its roles. The two typed last
+// (oldest first) stay, and the third is calculated: quantity and price give the total, and
+// typing what was paid gives the price (or the quantity).
+const TRADE_ROLES = ['quantity', 'price', 'total']
 const TRADE_INPUTS = ['quantity', 'price']
-const derivedField = (form) => TRADE_FIELDS.find((field) => !form.tradeInputs.includes(field))
+// The form fields holding each role, and the one remembering the roles typed last: one
+// set for a trade in dollars and one for a trade in pesos (units, pesos each, pesos paid).
+const USD_TRADE = { quantity: 'quantity', price: 'price', total: 'total', inputs: 'tradeInputs' }
+const ARS_TRADE = { quantity: 'units', price: 'arsPrice', total: 'arsTotal', inputs: 'pesosInputs' }
+
+const EMPTY_PESOS = { units: '', arsPrice: '', arsTotal: '', pesosInputs: TRADE_INPUTS, arsFee: '', ratio: '', ccl: '' }
+
+const derivedField = (form, fields = USD_TRADE) => TRADE_ROLES.find((role) => !form[fields.inputs].includes(role))
 
 // Fills in the calculated field; it stays empty until the other two are valid.
-const solveTrade = (form) => {
-  const field = derivedField(form)
-  const value = deriveTradeField(field, {
-    quantity: Number(form.quantity),
-    price: Number(form.price),
-    total: Number(form.total),
+const solveTrade = (form, fields = USD_TRADE) => {
+  const role = derivedField(form, fields)
+  const value = deriveTradeField(role, {
+    quantity: Number(form[fields.quantity]),
+    price: Number(form[fields.price]),
+    total: Number(form[fields.total]),
   })
-  return { ...form, [field]: value === null ? '' : String(value) }
+  return { ...form, [fields[role]]: value === null ? '' : String(value) }
 }
 
-const setTradeField = (form, field, value) =>
-  solveTrade({
-    ...form,
-    [field]: value,
-    tradeInputs: [...form.tradeInputs.filter((item) => item !== field), field].slice(-2),
-  })
+const setTradeField = (form, role, value, fields = USD_TRADE) =>
+  solveTrade(
+    {
+      ...form,
+      [fields[role]]: value,
+      [fields.inputs]: [...form[fields.inputs].filter((item) => item !== role), role].slice(-2),
+    },
+    fields,
+  )
 
 // Inputs hold strings, so numbers go back to text to prefill the form.
 // A saved date is 'YYYY-MM-DD', plus 'THH:mm' when it has a time of day.
@@ -133,8 +141,11 @@ export default function TransactionModal({
   const update = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }))
   const choose = (field, value) => () => setForm((prev) => ({ ...prev, [field]: value }))
   const updateTrade = (field) => (event) => setForm((prev) => setTradeField(prev, field, event.target.value))
+  const updatePesos = (role) => (event) => setForm((prev) => setTradeField(prev, role, event.target.value, ARS_TRADE))
   const derived = derivedField(form)
   const derivedNote = (field) => (derived === field ? ' · calculado' : '')
+  const derivedPesos = derivedField(form, ARS_TRADE)
+  const pesosNote = (role) => (derivedPesos === role ? ' · calculado' : '')
 
   // New assets come from a market search and need their catalog entry built
   // (name, category, current price) before they can be saved. `onPicked` gets
@@ -415,11 +426,16 @@ export default function TransactionModal({
                     <div className="field">
                       <span className="field__label">
                         {unitsLabel}
+                        {pesosNote('quantity')}
                         {form.type === 'sell' && held > 0 && pesos.ratio > 0 && (
                           <button
                             type="button"
                             className="field__action"
-                            onClick={choose('units', String(roundQuantity(held * pesos.ratio)))}
+                            onClick={() =>
+                              setForm((prev) =>
+                                setTradeField(prev, 'quantity', String(toLocalUnits(held, pesos.ratio)), ARS_TRADE),
+                              )
+                            }
                           >
                             Vender todo
                           </button>
@@ -431,13 +447,24 @@ export default function TransactionModal({
                         min="0"
                         aria-label={unitsLabel}
                         value={form.units}
-                        onChange={update('units')}
+                        onChange={updatePesos('quantity')}
                         required
                       />
                     </div>
                     <label>
-                      Precio en pesos
-                      <input type="number" step="any" min="0" value={form.arsPrice} onChange={update('arsPrice')} required />
+                      Precio unitario (ARS){pesosNote('price')}
+                      <input type="number" step="any" min="0" value={form.arsPrice} onChange={updatePesos('price')} required />
+                    </label>
+                  </div>
+
+                  <div className="modal__row">
+                    <label>
+                      Total (ARS){pesosNote('total')}
+                      <input type="number" step="any" min="0" value={form.arsTotal} onChange={updatePesos('total')} />
+                    </label>
+                    <label>
+                      Comisión (ARS, opcional)
+                      <input type="number" step="any" min="0" value={form.arsFee} onChange={update('arsFee')} />
                     </label>
                   </div>
 
@@ -460,11 +487,6 @@ export default function TransactionModal({
                     </label>
                   </div>
 
-                  <label>
-                    Comisión (pesos, opcional)
-                    <input type="number" step="any" min="0" value={form.arsFee} onChange={update('arsFee')} />
-                  </label>
-
                   {cclStatus === 'failed' && (
                     <p className="modal__hint">No se pudo traer el dólar CCL de ese día: cargalo a mano.</p>
                   )}
@@ -474,6 +496,9 @@ export default function TransactionModal({
                       {formatARS(pesos.ccl)}).
                     </p>
                   )}
+                  <p className="modal__hint">
+                    El precio es el de cada unidad, no lo que pagaste: eso va en el total, y el precio se calcula.
+                  </p>
                 </>
               ) : (
                 <>
@@ -605,7 +630,7 @@ export default function TransactionModal({
             <p className="modal__hint">
               {assets.some((item) => item.symbol === received.symbol)
                 ? `Tenés ${formatQuantity(held)} ${received.symbol} disponibles${
-                    inPesos && pesos.ratio > 0 ? ` (${formatQuantity(roundQuantity(held * pesos.ratio))} ${unitsLabel})` : ''
+                    inPesos && pesos.ratio > 0 ? ` (${formatQuantity(toLocalUnits(held, pesos.ratio))} ${unitsLabel})` : ''
                   }.`
                 : `${received.symbol} es nuevo: se va a agregar a tu catálogo de activos.`}
             </p>

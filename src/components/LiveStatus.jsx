@@ -1,6 +1,7 @@
 const LABELS = {
   live: 'En vivo',
   connecting: 'Conectando…',
+  idle: 'Sin activos',
   offline: 'Sin conexión',
   error: 'Error',
   disabled: 'Sin API key (datos de ejemplo)',
@@ -9,6 +10,7 @@ const LABELS = {
 const COLORS = {
   live: 'var(--up)',
   connecting: 'var(--accent)',
+  idle: 'var(--muted)',
   offline: 'var(--down)',
   error: 'var(--down)',
   disabled: 'var(--muted)',
