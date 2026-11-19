@@ -11,7 +11,7 @@ Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo h
 ### 2. Funcionalidad para un tracker completo
 
 - [ ] **Intereses del efectivo** (los que paga el broker por el saldo en USD): hoy una renta tiene que venir de un activo del catálogo, y el efectivo no lo es.
-- [ ] **Importar y exportar CSV**: cargar de una el historial de Binance o del broker, y tener un backup.
+- [ ] **Importar el historial de Binance o del broker** desde sus exports, de una. Baja prioridad: el backup propio ya está (ver "Hecho").
 
 ### 3. Historia y métricas
 
@@ -66,6 +66,7 @@ Mantenimiento:
 
 ### 2. Funcionalidad para un tracker completo
 
+- [x] **Backup en CSV.** Botón "Backup": descarga un CSV con las transacciones y el catálogo, y restaura desde uno (reemplaza todo, mostrando antes qué cambia). Para guardarlo fuera de la compu. Si un JSON roto no deja abrir la app, `npm run restore -- <backup.csv>`. Lo reemplazado queda en `backups/`.
 - [x] **Editar el catálogo desde la UI.** Panel "Catálogo" (botón en la barra de la tabla, o el lápiz del detalle de un activo): nombre, categoría, ratio y color de cualquier activo, y borrar los que no tienen órdenes. Una acción del catálogo sin ratio lo guarda con su primera orden en pesos.
 - [x] **Escape cierra el formulario de transacción**, como ya cierra los paneles laterales. Con la lista del buscador de activos abierta, el primer Escape cierra solo la lista.
 - [x] **Total pagado en el formulario.** Campo "Total (USD)" atado a cantidad y precio: se completan dos y el tercero se calcula, así una compra de US$1,000 se carga con lo que se pagó y lo que se recibió.

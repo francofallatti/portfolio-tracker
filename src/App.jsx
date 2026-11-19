@@ -7,6 +7,7 @@ import HistoryChart from './components/HistoryChart.jsx'
 import AllocationChart from './components/AllocationChart.jsx'
 import AssetsTable from './components/AssetsTable.jsx'
 import AssetDetail from './components/AssetDetail.jsx'
+import BackupModal from './components/BackupModal.jsx'
 import CashDetail from './components/CashDetail.jsx'
 import CatalogPanel from './components/CatalogPanel.jsx'
 import CurrencyToggle from './components/CurrencyToggle.jsx'
@@ -16,7 +17,7 @@ import { useGroupHistory } from './hooks/useGroupHistory.js'
 import { useLiveQuotes } from './hooks/useLiveQuotes.js'
 import { MoneyContext, useDollarRates } from './hooks/useMoney.js'
 import { useSnapshots } from './hooks/useSnapshots.js'
-import { deleteItems, saveItem, updateItem } from './services/dataStore.js'
+import { deleteItems, restoreBackup, saveItem, updateItem } from './services/dataStore.js'
 import { moneyFormatters } from './utils/format.js'
 import { HISTORY_RANGES, annualizedReturn, lifetimeReturn, portfolioFlows } from './utils/history.js'
 import {
@@ -55,6 +56,7 @@ export default function App() {
   const [selectedSymbol, setSelectedSymbol] = useState(null)
   // null when closed; `editing` is the symbol whose form starts open (from a detail panel).
   const [catalogPanel, setCatalogPanel] = useState(null)
+  const [backupOpen, setBackupOpen] = useState(false)
   // The table tab; it also filters both charts.
   const [groupKey, setGroupKey] = useState('all')
   // The range of the history chart: it decides whether the series is hourly or daily.
@@ -115,6 +117,7 @@ export default function App() {
   const closeDetail = useCallback(() => setSelectedSymbol(null), [])
   const closeModal = useCallback(() => setModal(null), [])
   const closeCatalog = useCallback(() => setCatalogPanel(null), [])
+  const closeBackup = useCallback(() => setBackupOpen(false), [])
   const symbolsInUse = useMemo(() => usedSymbols(transactions), [transactions])
 
   // While editing, the form sees the portfolio without the transaction being edited,
@@ -189,6 +192,13 @@ export default function App() {
     setCatalog((prev) => prev.filter((asset) => asset.symbol !== symbol))
   }
 
+  // Replaces the catalog and every transaction with the ones in a backup.
+  const restore = async (backup) => {
+    await restoreBackup(backup)
+    setCatalog(backup.assets)
+    setTransactions(backup.transactions)
+  }
+
   return (
     <MoneyContext.Provider value={money}>
       <div className="app">
@@ -218,6 +228,7 @@ export default function App() {
           onGroupChange={setGroupKey}
           onAdd={() => setModal({ asset: null, type: 'buy' })}
           onOpenCatalog={() => setCatalogPanel({ editing: null })}
+          onOpenBackup={() => setBackupOpen(true)}
           onSelect={setSelectedSymbol}
         />
 
@@ -256,6 +267,10 @@ export default function App() {
             onUpdate={updateAsset}
             onDelete={deleteAsset}
           />
+        )}
+
+        {backupOpen && (
+          <BackupModal assets={catalog} transactions={transactions} onRestore={restore} onClose={closeBackup} />
         )}
 
         {modal && (

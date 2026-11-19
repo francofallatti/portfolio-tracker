@@ -17,3 +17,6 @@ export const saveItem = (route, item) => request(route, 'POST', item)
 export const deleteItems = (route, ids) => request(route, 'DELETE', { ids })
 
 export const updateItem = (route, id, changes) => request(route, 'PATCH', { id, changes })
+
+// Replaces the catalog and every transaction with `{ assets, transactions }`.
+export const restoreBackup = (backup) => request('/api/backup', 'PUT', backup)

@@ -3,5 +3,8 @@ dist
 .env.local
 src/data/history.json
 
+# What a restore replaced (scripts/restoreData.js).
+backups/
+
 # Broker exports and personal spreadsheets used to load the real data.
 import_data/

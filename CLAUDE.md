@@ -17,6 +17,7 @@ Dashboard personal para seguir un portfolio de cripto y acciones. Proyecto 100% 
 - `npm run dev`: dev server en http://127.0.0.1:5173. Es necesario para guardar datos.
 - `npm run build`: build de producción.
 - `npm test`: tests con Vitest (`vitest run`). Cubren `utils/portfolio.js` y `utils/history.js`, de donde sale toda la plata, y `utils/validation.js`, que decide qué se puede guardar. Los componentes no tienen tests.
+- `npm run restore -- <backup.csv>`: restaura un backup sin abrir la app (ver "Backup"). Es la salida cuando un JSON roto no la deja cargar.
 - `npm run lint`: ESLint 9 (`eslint.config.js`): recomendadas de JS más las reglas de hooks de React (`rules-of-hooks` es error, `exhaustive-deps` es aviso).
 
 ## Stack
@@ -31,6 +32,7 @@ src/
   components/        PortfolioHeader, LiveStatus, HistoryChart, AllocationChart, AssetsTable,
                      AssetDetail, CashDetail y CatalogPanel (paneles laterales), PriceChart (precio de un activo
                      con sus compras y ventas, dentro de AssetDetail), TransactionModal, AssetPicker,
+                     BackupModal (exportar y restaurar el backup en CSV),
                      ColorPicker, ConfirmButton (confirmación en dos clics para acciones destructivas),
                      CurrencyToggle (USD | ARS en el encabezado)
   hooks/             useLiveQuotes (cotizaciones), useSnapshots (guarda el historial),
@@ -47,9 +49,13 @@ src/
   utils/             portfolio.js (cálculos), history.js (snapshots y series de la historia),
                      format.js (moneda y fechas),
                      colors.js (paleta de activos y color del efectivo),
-                     validation.js (validadores de los documentos JSON, los usa `vite.config.js`)
+                     validation.js (validadores de los documentos JSON, los usa `vite.config.js`),
+                     backup.js (el backup en CSV: exportar, leer, validar y comparar)
                      *.test.js: tests de Vitest al lado de cada archivo
   data/              documentos JSON (ver abajo)
+scripts/             restoreData.js (reemplaza los JSON por un backup; lo usan el dev server y el comando),
+                     restore.js (`npm run restore`)
+backups/             lo que reemplazó cada restauración (local, en `.gitignore`)
 vite.config.js       plugin `json-store` con los endpoints de escritura y el proxy `/api/yahoo`
 eslint.config.js     reglas de ESLint
 ```
@@ -78,6 +84,18 @@ Reglas:
 - Los tres archivos son arrays. Escritura: `POST /api/transactions`, `/api/history` y `/api/assets` agregan un ítem al array (responden 409 si ya existe: `/api/assets` por `symbol`, `/api/transactions` por `id`, así reimportar del broker no duplica órdenes). `DELETE /api/transactions` con `{ ids }` borra órdenes; `DELETE /api/assets` (ids = símbolos) borra activos y responde 409 si alguno tiene transacciones o es USDT (`findDeleteError`, con `usedSymbols`). `PATCH` con `{ id, changes }` modifica un ítem (un campo en `null` se quita): en `/api/assets` (id = `symbol`) `color`, `name`, `category` y `ratio` (símbolo y tipo no); en `/api/transactions`, `date`, `quantity`, `price`, `fee`, `funding`, `proceeds`, `amount`, `newShares` y `oldShares` (tipo y símbolo no: para eso se borra y se carga de nuevo). Solo existen con `npm run dev`; en un build de producción no hay dónde guardar. Rechazan con 403 los pedidos que traen un `Origin` distinto al del dev server (`isSameOrigin`), así otra web abierta en el navegador no puede tocar los datos.
 - Antes de guardar o borrar, `findLedgerError` reproduce todo en orden de fecha y bloquea si alguna venta queda sin compras previas que la cubran o si el efectivo queda negativo en algún momento.
 - Para hacer escribible un documento nuevo, sumalo a `STORES` en `vite.config.js` con su validador, que va en `utils/validation.js` con su test (los números tienen que ser números de verdad, no texto) (`uniqueKey` para evitar duplicados, `idKey` para habilitar DELETE, `findDeleteError` para bloquear borrados, `editable: { key, fields }` para habilitar PATCH sobre esos campos). Desde el front, usá `saveItem` / `deleteItems` / `updateItem` de `services/dataStore.js`.
+
+## Backup (CSV)
+
+El botón "Backup" de la barra de la tabla abre `BackupModal`: descarga un CSV con todo lo necesario para reconstruir el portfolio y restaura desde uno. Es para guardar fuera de la compu (Drive) y tener un punto de restauración. No importa exports de Binance ni del broker: solo lee lo que la app exportó.
+
+- Un solo archivo (`portfolio-backup-YYYY-MM-DD.csv`) con el catálogo y las transacciones: sin el catálogo, las transacciones quedarían apuntando a activos que no existen. `history.json` no va: la historia se reconstruye con las transacciones.
+- Formato (`utils/backup.js`): una fila por ítem, con la columna `record` (`asset` o `transaction`) y una columna por cada campo de los dos documentos. Primero los activos y después las transacciones, en el orden guardado. La última fila es `end` con la cantidad de filas: si el archivo se cortó (una descarga o una sincronización a medias), falta o no coincide y se rechaza.
+- Vuelve exactamente lo que salió: los números van como los escribe JavaScript, un campo que falta es una celda vacía y un texto vacío es `""`. `toBackupCsv` falla si un ítem tiene un campo que el formato no conoce: un campo nuevo en `assets.json` o `transactions.json` hay que sumarlo a `ASSET_FIELDS` o `TRANSACTION_FIELDS` (hay un test de ida y vuelta con una transacción de cada forma). Al leer, una columna desconocida se ignora, así un backup viejo sigue sirviendo.
+- No sobrevive a Excel: con configuración regional argentina guarda con `;` y coma decimal. `parseBackupCsv` lo rechaza (columnas que faltan, o una fila con más celdas que el encabezado) y dice en qué línea.
+- Restaurar reemplaza todo, no mezcla: catálogo y transacciones quedan iguales al backup. Antes de confirmar (dos clics, `ConfirmButton`), el formulario muestra qué cambia contra lo que hay (`summarizeRestore`: nuevas, distintas y las que se pierden por no estar en el backup).
+- `findBackupError` valida el conjunto con las mismas reglas que los endpoints: cada ítem con su validador, sin repetidos, cada transacción con su activo (y su `source`) en el catálogo del backup, y `findLedgerError`. Lo corren el formulario y, de nuevo, `restoreData`.
+- `restoreData` (`scripts/restoreData.js`) escribe los dos JSON. Antes copia los que había a `backups/before-restore-<fecha y hora>/`, tal cual, sin leerlos (un JSON roto también se guarda), y escribe cada archivo a un temporal y lo renombra. Lo usan `PUT /api/backup` (cuerpo `{ assets, transactions }`, mismo control de origen que el resto) y `npm run restore -- <backup.csv>`, para cuando la app no abre.
 
 ## Vistas por grupo (Todo / Criptomonedas / Acciones)
 

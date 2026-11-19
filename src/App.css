@@ -1048,6 +1048,49 @@ h3 {
   gap: 10px;
 }
 
+/* Backup modal */
+
+.backup,
+.backup__section,
+.backup__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backup {
+  gap: 20px;
+}
+
+.backup__section h4,
+.backup__preview p,
+.backup__preview ul {
+  margin: 0;
+}
+
+.backup__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  align-self: flex-start;
+}
+
+.backup__preview {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.backup__preview ul {
+  padding-left: 18px;
+}
+
+.backup__notice {
+  color: var(--up);
+}
+
 .ghost-button {
   padding: 10px 18px;
   background: none;

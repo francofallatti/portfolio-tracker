@@ -41,12 +41,15 @@ La app necesita el dev server (`npm run dev`) para guardar: no está pensada par
 - `src/data/assets.json`: el catálogo de activos (se agranda solo al cargar un activo nuevo).
 - `src/data/history.json`: snapshots del valor, de respaldo. Se crea solo y git lo ignora.
 
-Para hacer un backup, copiá la carpeta `src/data/`. Si subís tu copia a un repo público, **no commitees `assets.json` ni `transactions.json` con tus datos**.
+Para hacer un backup, usá el botón "Backup" de la tabla: descarga un CSV con tus operaciones y el catálogo. Guardalo fuera de la compu (por ejemplo en Drive) y no lo abras con Excel, que cambia los números. Para volver a ese punto, "Backup" → "Elegir archivo…"; si la app no abre, `npm run restore -- <backup.csv>`. Lo que la restauración reemplaza queda en `backups/`.
+
+Si subís tu copia a un repo público, **no commitees `assets.json` ni `transactions.json` con tus datos**.
 
 ## Comandos
 
 - `npm run dev`: la app, en http://127.0.0.1:5173.
 - `npm test`: tests de los cálculos (Vitest).
+- `npm run restore -- <backup.csv>`: restaura un backup sin abrir la app.
 - `npm run lint`: ESLint.
 - `npm run build`: build de producción (solo lectura: sin dev server no hay dónde guardar).
 

@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { usedSymbols } from './src/utils/portfolio.js'
 import { isValidAsset, isValidSnapshot, isValidTransaction } from './src/utils/validation.js'
+import { restoreData } from './scripts/restoreData.js'
 
 const dataFile = (name) => fileURLToPath(new URL(`./src/data/${name}`, import.meta.url))
 
@@ -138,6 +139,20 @@ function jsonStore() {
     name: 'json-store',
     apply: 'serve',
     configureServer(server) {
+      // PUT replaces the catalog and the transactions with a backup (`{ assets, transactions }`),
+      // after keeping the files it replaces in `backups/`.
+      server.middlewares.use('/api/backup', async (req, res, next) => {
+        if (req.method !== 'PUT') return next()
+        if (!isSameOrigin(req)) return sendJson(res, 403, { error: 'Origen no permitido' })
+
+        try {
+          restoreData(await readBody(req))
+          sendJson(res, 200, { restored: true })
+        } catch (error) {
+          sendJson(res, 400, { error: error.message })
+        }
+      })
+
       for (const [route, store] of Object.entries(STORES)) {
         server.middlewares.use(route, async (req, res, next) => {
           const handler = handlerFor(store, req.method)

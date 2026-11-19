@@ -72,7 +72,7 @@ function sortAssets(assets, { key, direction }) {
 // `assets` and `closedPositions` arrive already filtered by the selected group (`groupKey`).
 // Holdings follow the order picked in the headers (by value at first). Closed positions (sold
 // out) go below, collapsed and the latest closed first, with their realized result in the +/- column.
-export default function AssetsTable({ assets, closedPositions, groupKey, onGroupChange, onAdd, onOpenCatalog, onSelect }) {
+export default function AssetsTable({ assets, closedPositions, groupKey, onGroupChange, onAdd, onOpenCatalog, onOpenBackup, onSelect }) {
   const money = useMoney()
   const [showClosed, setShowClosed] = useState(false)
   const [sort, setSort] = useState(readSort)
@@ -111,6 +111,9 @@ export default function AssetsTable({ assets, closedPositions, groupKey, onGroup
         </div>
 
         <div className="assets__actions">
+          <button type="button" className="ghost-button" onClick={onOpenBackup}>
+            Backup
+          </button>
           <button type="button" className="ghost-button" onClick={onOpenCatalog}>
             Catálogo
           </button>
