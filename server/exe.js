@@ -18,6 +18,7 @@ import builtApp from './dist-assets.generated.js'
 const FIRST_PORT = 4783
 const PORT_ATTEMPTS = 10
 const HOST = '127.0.0.1'
+const JUST_STARTED = 15000
 
 const dataDir = path.join(path.dirname(process.execPath), 'data')
 const safetyDir = path.join(dataDir, 'backups')
@@ -31,12 +32,13 @@ function openBrowser(url) {
   spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {})
 }
 
-const isThisApp = async (url) => {
+// The copy of this app already serving at `url` (`{ startedAt }`), or null if it's something else.
+const runningCopy = async (url) => {
   try {
-    const response = await fetch(`${url}/api/ping`)
-    return (await response.json()).app === APP_ID
+    const ping = await (await fetch(`${url}/api/ping`)).json()
+    return ping.app === APP_ID ? ping : null
   } catch {
-    return false
+    return null
   }
 }
 
@@ -64,12 +66,12 @@ async function main() {
       await startServer({ dataDir, safetyDir, assets, port, host: HOST })
     } catch (error) {
       if (error.code !== 'EADDRINUSE') throw error
-      // Opened twice: the first copy is already serving, so just show it.
-      if (await isThisApp(url)) {
-        openBrowser(url)
-        return
-      }
-      continue
+      // Opened twice: the first copy is already serving, so just show it. Unless it has
+      // only just started (a double click that landed twice): its own tab is opening.
+      const copy = await runningCopy(url)
+      if (!copy) continue
+      if (Date.now() - copy.startedAt > JUST_STARTED) openBrowser(url)
+      return
     }
 
     console.log(`Portfolio Tracker está corriendo en ${url}`)

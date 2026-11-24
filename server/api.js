@@ -127,6 +127,7 @@ export function createApi({ dataDir, safetyDir, finnhubKey = '' }) {
     if (!fs.existsSync(path.join(dataDir, name))) writeJson(path.join(dataDir, name), content)
   }
 
+  const startedAt = Date.now()
   const dataFile = (name) => path.join(dataDir, name)
   const settingsFile = dataFile(SETTINGS_FILE)
   const readSettings = () => (fs.existsSync(settingsFile) ? readJson(settingsFile) : {})
@@ -170,14 +171,19 @@ export function createApi({ dataDir, safetyDir, finnhubKey = '' }) {
   async function handle(route, target, req, res, next) {
     const { method } = req
 
-    if (route === '/api/ping' && method === 'GET') return sendJson(res, 200, { app: APP_ID })
+    if (route === '/api/ping' && method === 'GET') return sendJson(res, 200, { app: APP_ID, startedAt })
 
     if (route.startsWith('/api/yahoo/') && method === 'GET') {
       return proxyYahoo(target.slice('/api/yahoo'.length), res)
     }
 
     if (route === '/api/settings') {
-      if (method === 'GET') return sendJson(res, 200, { finnhubKey, ...readSettings() })
+      // `keyAsked`: the settings were saved at least once, with a key or without one. Until
+      // then the app opens the key form by itself. It goes with the data, not with the
+      // browser, so a new data folder asks again.
+      if (method === 'GET') {
+        return sendJson(res, 200, { finnhubKey, ...readSettings(), keyAsked: fs.existsSync(settingsFile) })
+      }
       if (method !== 'PUT') return next()
       const settings = await readBody(req)
       if (!isValidSettings(settings)) return sendJson(res, 400, { error: 'Datos inválidos' })

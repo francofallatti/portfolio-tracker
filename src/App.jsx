@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PortfolioHeader from './components/PortfolioHeader.jsx'
 import HistoryChart from './components/HistoryChart.jsx'
 import AllocationChart from './components/AllocationChart.jsx'
@@ -37,8 +37,6 @@ import {
 } from './utils/portfolio.js'
 
 const CURRENCY_KEY = 'display-currency'
-// Set once the Finnhub key form was shown, so it only opens by itself the first time.
-const KEY_ASKED_KEY = 'finnhub-key-asked'
 
 // Remembering the currency is a per-browser convenience; storage can be unavailable.
 const readCurrency = () => {
@@ -49,21 +47,16 @@ const readCurrency = () => {
   }
 }
 
-const wasKeyAsked = () => {
-  try {
-    return localStorage.getItem(KEY_ASKED_KEY) !== null
-  } catch {
-    return true
-  }
-}
-
 // `initial` is what the local server has on start: `{ assets, transactions, snapshots }`.
-export default function App({ initial }) {
+// `keyAsked`: the Finnhub key form was already answered for this data, with a key or without.
+export default function App({ initial, keyAsked }) {
   const [catalog, setCatalog] = useState(initial.assets)
   const [transactions, setTransactions] = useState(initial.transactions)
   // The key is also set in services/finnhubQuotes.js, which is what the requests use.
   const [finnhubKey, setFinnhubKeyState] = useState(getFinnhubKey)
-  const [keyModalOpen, setKeyModalOpen] = useState(() => !getFinnhubKey() && !wasKeyAsked())
+  // The form opens by itself until it's answered once; after that, only from the header.
+  const [keyModalOpen, setKeyModalOpen] = useState(() => !getFinnhubKey() && !keyAsked)
+  const keyAnswered = useRef(keyAsked)
   // null when closed; `asset` and `type` preselect the form when opened from a detail panel.
   const [modal, setModal] = useState(null)
   const [selectedSymbol, setSelectedSymbol] = useState(null)
@@ -133,10 +126,11 @@ export default function App({ initial }) {
   const closeBackup = useCallback(() => setBackupOpen(false), [])
   const closeKeyModal = useCallback(() => {
     setKeyModalOpen(false)
-    try {
-      localStorage.setItem(KEY_ASKED_KEY, '1')
-    } catch {
-      // Not remembered; the form opens again on the next visit.
+    // "Ahora no" is an answer too: saved with the data, so the form doesn't come back by itself.
+    if (!keyAnswered.current && !getFinnhubKey()) {
+      keyAnswered.current = true
+      // If it can't be saved, the form opens again on the next visit.
+      saveSettings({ finnhubKey: '' }).catch(() => {})
     }
   }, [])
   const symbolsInUse = useMemo(() => usedSymbols(transactions), [transactions])
@@ -226,6 +220,7 @@ export default function App({ initial }) {
       throw new Error('Finnhub no aceptó esa key. Revisá que esté copiada completa.')
     }
     await saveSettings({ finnhubKey: key })
+    keyAnswered.current = true
     setFinnhubKey(key)
     setFinnhubKeyState(key)
     closeKeyModal()

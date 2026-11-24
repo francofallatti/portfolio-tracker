@@ -42,7 +42,7 @@ describe('standalone server', () => {
     expect(await get('/api/assets')).toEqual(STARTER_ASSETS)
     expect(await get('/api/transactions')).toEqual([])
     expect(await get('/api/history')).toEqual([])
-    expect(await get('/api/settings')).toEqual({ finnhubKey: '' })
+    expect(await get('/api/settings')).toEqual({ finnhubKey: '', keyAsked: false })
   })
 
   it('keeps what is saved in the data folder', async () => {
@@ -75,8 +75,21 @@ describe('standalone server', () => {
 
   it('saves the Finnhub key and gives it back', async () => {
     expect((await send('/api/settings', 'PUT', { finnhubKey: 'abc123' })).status).toBe(200)
-    expect(await get('/api/settings')).toEqual({ finnhubKey: 'abc123' })
+    expect(await get('/api/settings')).toEqual({ finnhubKey: 'abc123', keyAsked: true })
     expect((await send('/api/settings', 'PUT', { finnhubKey: 5 })).status).toBe(400)
+  })
+
+  it('remembers that the key was asked when it is declined', async () => {
+    await send('/api/settings', 'PUT', { finnhubKey: '' })
+
+    expect(await get('/api/settings')).toEqual({ finnhubKey: '', keyAsked: true })
+  })
+
+  it('says which app it is and since when, for a second launch to find it', async () => {
+    const ping = await get('/api/ping')
+
+    expect(ping.app).toBe('portfolio-tracker')
+    expect(Date.now() - ping.startedAt).toBeLessThan(60000)
   })
 
   it('restores a backup and keeps what it replaced', async () => {

@@ -14,7 +14,7 @@ loadData()
     setFinnhubKey(settings.finnhubKey)
     root.render(
       <StrictMode>
-        <App initial={data} />
+        <App initial={data} keyAsked={settings.keyAsked} />
       </StrictMode>,
     )
   })
