@@ -22,7 +22,10 @@ Dashboard personal para seguir un portfolio de cripto y acciones. Proyecto 100% 
 
 ## Stack
 
-React 18 + Vite 5, JavaScript (sin TypeScript), Recharts 2 para gráficos, lucide-react para íconos. CSS plano en un único `src/App.css`.
+React 18 + Vite 5, JavaScript (sin TypeScript), Recharts 3 para gráficos, lucide-react para íconos. CSS plano en un único `src/App.css`.
+
+- `react-is` es una dependencia que pide Recharts 3: tiene que ir en la misma versión que React.
+- El build sale en tres archivos (`manualChunks` en `vite.config.js`): la app, `vendor` (React y los íconos) y `charts` (Recharts y lo que trae).
 
 ## Estructura
 
@@ -139,6 +142,7 @@ Editar una transacción reusa `TransactionModal` con `editing`: precarga los cam
 
 - `getAllocation(assets, { grouped })`: agrupado muestra el top 5 por valor y suma el resto en "Otros" (con sus ítems en `members`); sin agrupar muestra todo. Si sobra un solo activo, no se agrupa (`canGroupAllocation`).
 - Cada porción usa el `color` de su activo, el mismo del ícono en la tabla (el efectivo usa `CASH_COLOR`, fijo). "Otros" es gris.
+- La torta no se anima (`isAnimationActive={false}`): cada cotización cambia los datos y Recharts 3 reinicia la animación, así que con el stream de cripto las porciones no terminaban de dibujarse. Cada porción se dibuja con `shape` (un `Sector`), no con `Cell`, que Recharts 4 va a sacar.
 - `AllocationChart` tiene el selector "Top 5 | Todos" (se recuerda en `localStorage`). Un clic en "Otros", en la torta o en la leyenda, expande. El tooltip de "Otros" lista su contenido.
 
 ## Efectivo (USD)

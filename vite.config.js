@@ -172,6 +172,17 @@ function jsonStore() {
 
 export default defineConfig({
   plugins: [react(), jsonStore()],
+  build: {
+    rollupOptions: {
+      output: {
+        // The charts library is most of the bundle and changes far less often than the app.
+        manualChunks: (id) => {
+          if (!id.includes('node_modules')) return undefined
+          return /node_modules\/(react|react-dom|scheduler|lucide-react)\//.test(id) ? 'vendor' : 'charts'
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       // Yahoo Finance has no CORS, so the browser asks the dev server and it asks Yahoo

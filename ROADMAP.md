@@ -29,7 +29,6 @@ Hoy solo funciona con `npm run dev` en esta PC. Es el cambio más grande; vale l
 ### 5. Calidad técnica
 
 - [ ] **Snapshots duplicados con dos pestañas abiertas:** cada pestaña guarda su propio punto por hora.
-- [ ] **Migrar Recharts a v3** y partir el bundle: el build avisa que pesa 631 kB.
 
 Datos seguros:
 
@@ -92,6 +91,7 @@ Mantenimiento:
 
 ### 5. Calidad técnica
 
+- [x] **Recharts 3 y bundle partido.** Recharts pasó de 2.13 a 3.11. El build sale en tres archivos (la app, React con los íconos, y los gráficos) y ya no avisa por el tamaño. La torta usa `shape` en vez de `Cell`, que Recharts 4 va a sacar, y no se anima: cada cotización reiniciaba la animación.
 - [x] **El formulario ya no se cierra al soltar el mouse afuera**: solo cierra si el clic empieza y termina en el fondo, así seleccionar texto en un campo no pierde lo cargado.
 - [x] **Validadores más estrictos**, en `utils/validation.js` con tests: números de verdad (no texto), comisión válida, sin fechas futuras e `id` único en las transacciones (reimportar no duplica).
 - [x] **Dev server protegido:** Vite 5.4.21 y los endpoints de escritura rechazan pedidos de otro origen.

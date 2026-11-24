@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import { Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from 'recharts'
 import { TOP_ALLOCATION_ITEMS, canGroupAllocation, getAllocation } from '../utils/portfolio.js'
 import { useMoney } from '../hooks/useMoney.js'
 
@@ -104,12 +104,18 @@ export default function AllocationChart({ assets, scope }) {
                   outerRadius="90%"
                   paddingAngle={2}
                   stroke="none"
+                  // Every live quote changes the data, and Recharts 3 restarts the animation
+                  // each time: with a busy stream the slices would never finish drawing.
+                  isAnimationActive={false}
                   onClick={(_, index) => expandIfGroup(data[index])}
-                >
-                  {data.map((item) => (
-                    <Cell key={item.name} fill={item.color} style={{ cursor: item.members ? 'pointer' : 'default' }} />
-                  ))}
-                </Pie>
+                  shape={(props) => (
+                    <Sector
+                      {...props}
+                      fill={props.payload.color}
+                      style={{ cursor: props.payload.members ? 'pointer' : 'default' }}
+                    />
+                  )}
+                />
                 <Tooltip content={<AllocationTooltip />} />
               </PieChart>
             </ResponsiveContainer>
