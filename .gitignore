@@ -2,6 +2,12 @@ node_modules
 dist
 .env.local
 src/data/history.json
+# The Finnhub key entered in the app.
+src/data/settings.json
+
+# The executable (npm run build:exe) and the built app it carries inside.
+dist-exe/
+server/dist-assets.generated.js
 
 # What a restore replaced (scripts/restoreData.js).
 backups/

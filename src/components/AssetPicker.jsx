@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchCryptoMarkets } from '../services/binanceMarkets.js'
-import { FINNHUB_API_KEY, searchStocks } from '../services/finnhubQuotes.js'
+import { getFinnhubKey, searchStocks } from '../services/finnhubQuotes.js'
 
 const MAX_NEW_PER_TYPE = 5
 const SEARCH_DELAY = 300
@@ -26,7 +26,7 @@ export default function AssetPicker({ catalog, selected, onSelect }) {
 
   useEffect(() => {
     setStockResults([])
-    if (!FINNHUB_API_KEY || !term) {
+    if (!getFinnhubKey() || !term) {
       setSearching(false)
       return
     }
@@ -127,8 +127,8 @@ export default function AssetPicker({ catalog, selected, onSelect }) {
           ))}
           {searching && <li className="asset-picker__hint">Buscando acciones…</li>}
           {!searching && !results.length && <li className="asset-picker__hint">Sin resultados.</li>}
-          {!FINNHUB_API_KEY && term && (
-            <li className="asset-picker__hint">Para buscar acciones nuevas configurá VITE_FINNHUB_API_KEY.</li>
+          {!getFinnhubKey() && term && (
+            <li className="asset-picker__hint">Para buscar acciones nuevas cargá tu key de Finnhub (arriba, al lado de las cotizaciones).</li>
           )}
         </ul>
       )}

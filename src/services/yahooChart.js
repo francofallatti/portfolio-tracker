@@ -1,6 +1,6 @@
 // Yahoo Finance's chart API: past prices of US stocks and ETFs, which Finnhub's free
-// plan doesn't give. It's unofficial and has no CORS, so requests go through the dev
-// server's proxy (`/api/yahoo` in vite.config.js): it only works with `npm run dev`.
+// plan doesn't give. It's unofficial and has no CORS, so requests go through the
+// local server (`/api/yahoo` in server/api.js): a static build can't reach it.
 const CHART_URL = '/api/yahoo/v8/finance/chart'
 // Bars barely change in a few minutes; until then, reuse the last response.
 const CACHE_TTL = 10 * 60 * 1000

@@ -19,7 +19,10 @@ Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo h
 
 ### 4. Usarla fuera de esta compu
 
-Hoy solo funciona con `npm run dev` en esta PC. Es el cambio más grande; vale la pena solo si se va a usar desde otro lado (por ejemplo el celular).
+Hoy corre en una compu (con `npm run dev` o con el ejecutable) y los datos quedan ahí. Es el cambio más grande; vale la pena solo si se va a usar desde otro lado (por ejemplo el celular).
+
+- [ ] **Ejecutable para Mac y Linux**: Bun los compila desde Windows (`--target`), pero falta dónde probarlos.
+- [ ] **Firmar el ejecutable**, para que Windows no avise la primera vez. El certificado se paga por año.
 
 - [ ] **Base de datos real** (por ejemplo Supabase) en lugar de los JSON.
 - [ ] **Login**: son datos financieros.
@@ -88,6 +91,11 @@ Mantenimiento:
 - [x] **Precios históricos de acciones** con la API de gráficos de Yahoo Finance (no oficial, sin key), por un proxy del dev server porque no permite CORS. "Todo", "Acciones" y "Criptomonedas" se reconstruyen hora por hora con `replayValue`; los snapshots quedan de respaldo.
 - [x] **"Todo" sin huecos:** sale de lo anterior, la serie reconstruida no depende de que la app esté abierta.
 - [x] **Rendimiento en %** en el rango, al lado del número en dólares. Modified Dietz (`periodReturn`): el resultado sobre el capital promedio invertido, así el % siempre acompaña al número en dólares.
+
+### 4. Usarla fuera de esta compu
+
+- [x] **Ejecutable que corre sin Node** (`npm run build:exe`, con Bun): un `.exe` que se abre con doble clic, guarda los datos en una carpeta `data/` a su lado y se publica en los Releases del repo público. La API local salió de `vite.config.js` a `server/api.js`, que usan el dev server y el ejecutable, y la app ya no importa los JSON: los pide al arrancar.
+- [x] **Key de Finnhub desde la app**: se carga en pantalla (la primera vez se pide sola), se verifica contra Finnhub y se guarda con los datos. Ya no hace falta `.env.local`, que sigue sirviendo en desarrollo.
 
 ### 5. Calidad técnica
 

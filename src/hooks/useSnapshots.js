@@ -5,7 +5,7 @@ import { buildSnapshot } from '../utils/history.js'
 const SNAPSHOT_INTERVAL = 60 * 60 * 1000
 const CHECK_INTERVAL = 60 * 1000
 
-// Saves the portfolio value (total and by asset type) to src/data/history.json
+// Saves the portfolio value (total and by asset type) to history.json
 // at most once per SNAPSHOT_INTERVAL, only while live quotes are loaded (`ready`).
 export function useSnapshots(initialSnapshots, assets, ready) {
   const [snapshots, setSnapshots] = useState(initialSnapshots)
@@ -28,7 +28,7 @@ export function useSnapshots(initialSnapshots, assets, ready) {
         await saveItem('/api/history', snapshot)
         setSnapshots((prev) => [...prev, snapshot])
       } catch {
-        // Without the dev server there is nowhere to save; retry on the next check.
+        // Without the local server there is nowhere to save; retry on the next check.
       } finally {
         saving.current = false
       }

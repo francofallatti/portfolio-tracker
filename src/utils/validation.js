@@ -1,4 +1,4 @@
-// What the write endpoints (vite.config.js) accept in each JSON document.
+// What the write endpoints (server/api.js) accept in each JSON document.
 
 // Local date, with the time of day when it's known.
 const TRANSACTION_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/
@@ -71,6 +71,14 @@ export const isValidSnapshot = (snapshot) =>
     snapshot.byType,
     (byType) => byType !== null && typeof byType === 'object' && Object.values(byType).every(isAmount),
   )
+
+// The Finnhub key as text; empty means there is none. Nothing else is kept in the settings.
+export const isValidSettings = (settings) =>
+  settings !== null &&
+  typeof settings === 'object' &&
+  Object.keys(settings).join() === 'finnhubKey' &&
+  typeof settings.finnhubKey === 'string' &&
+  /^[\w-]{0,100}$/.test(settings.finnhubKey)
 
 // A stock also bought in Argentina has the `ratio` of its Argentine units (CEDEARs, or
 // local shares per ADR) per share, and `localSymbol` when it trades there under another ticker.

@@ -1,7 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import initialAssets from './data/assets.json'
-import initialTransactions from './data/transactions.json'
-import initialSnapshots from './data/history.json'
 import PortfolioHeader from './components/PortfolioHeader.jsx'
 import HistoryChart from './components/HistoryChart.jsx'
 import AllocationChart from './components/AllocationChart.jsx'
@@ -11,13 +8,15 @@ import BackupModal from './components/BackupModal.jsx'
 import CashDetail from './components/CashDetail.jsx'
 import CatalogPanel from './components/CatalogPanel.jsx'
 import CurrencyToggle from './components/CurrencyToggle.jsx'
+import FinnhubKeyModal from './components/FinnhubKeyModal.jsx'
 import LiveStatus from './components/LiveStatus.jsx'
 import TransactionModal from './components/TransactionModal.jsx'
 import { useGroupHistory } from './hooks/useGroupHistory.js'
 import { useLiveQuotes } from './hooks/useLiveQuotes.js'
 import { MoneyContext, useDollarRates } from './hooks/useMoney.js'
 import { useSnapshots } from './hooks/useSnapshots.js'
-import { deleteItems, restoreBackup, saveItem, updateItem } from './services/dataStore.js'
+import { deleteItems, restoreBackup, saveItem, saveSettings, updateItem } from './services/dataStore.js'
+import { getFinnhubKey, isFinnhubKeyAccepted, setFinnhubKey } from './services/finnhubQuotes.js'
 import { moneyFormatters } from './utils/format.js'
 import { HISTORY_RANGES, annualizedReturn, lifetimeReturn, portfolioFlows } from './utils/history.js'
 import {
@@ -38,6 +37,8 @@ import {
 } from './utils/portfolio.js'
 
 const CURRENCY_KEY = 'display-currency'
+// Set once the Finnhub key form was shown, so it only opens by itself the first time.
+const KEY_ASKED_KEY = 'finnhub-key-asked'
 
 // Remembering the currency is a per-browser convenience; storage can be unavailable.
 const readCurrency = () => {
@@ -48,9 +49,21 @@ const readCurrency = () => {
   }
 }
 
-export default function App() {
-  const [catalog, setCatalog] = useState(initialAssets)
-  const [transactions, setTransactions] = useState(initialTransactions)
+const wasKeyAsked = () => {
+  try {
+    return localStorage.getItem(KEY_ASKED_KEY) !== null
+  } catch {
+    return true
+  }
+}
+
+// `initial` is what the local server has on start: `{ assets, transactions, snapshots }`.
+export default function App({ initial }) {
+  const [catalog, setCatalog] = useState(initial.assets)
+  const [transactions, setTransactions] = useState(initial.transactions)
+  // The key is also set in services/finnhubQuotes.js, which is what the requests use.
+  const [finnhubKey, setFinnhubKeyState] = useState(getFinnhubKey)
+  const [keyModalOpen, setKeyModalOpen] = useState(() => !getFinnhubKey() && !wasKeyAsked())
   // null when closed; `asset` and `type` preselect the form when opened from a detail panel.
   const [modal, setModal] = useState(null)
   const [selectedSymbol, setSelectedSymbol] = useState(null)
@@ -62,7 +75,7 @@ export default function App() {
   // The range of the history chart: it decides whether the series is hourly or daily.
   const [rangeKey, setRangeKey] = useState('30d')
   const { resolution } = HISTORY_RANGES.find((range) => range.key === rangeKey)
-  const { quotes, cryptoStatus, stockStatus, ready } = useLiveQuotes(catalog)
+  const { quotes, cryptoStatus, stockStatus, ready } = useLiveQuotes(catalog, finnhubKey)
   // Everything is kept in dollars; 'ARS' only shows values in pesos at the MEP dollar.
   const [currency, setCurrency] = useState(readCurrency)
   // Pesos at the CCL dollar: the one CEDEARs follow, so values match the broker's in pesos.
@@ -92,7 +105,7 @@ export default function App() {
   }, [transactions, totals.value])
   const closedPositions = useMemo(() => buildClosedPositions(pricedCatalog, transactions), [pricedCatalog, transactions])
   const results = useMemo(() => getResults(assets, closedPositions), [assets, closedPositions])
-  const snapshots = useSnapshots(initialSnapshots, assets, ready)
+  const snapshots = useSnapshots(initial.snapshots, assets, ready)
 
   const groupAssets = useMemo(() => filterByGroup(assets, groupKey), [assets, groupKey])
   const groupHistory = useGroupHistory(groupKey, { snapshots, transactions, catalog: pricedCatalog, resolution })
@@ -118,6 +131,14 @@ export default function App() {
   const closeModal = useCallback(() => setModal(null), [])
   const closeCatalog = useCallback(() => setCatalogPanel(null), [])
   const closeBackup = useCallback(() => setBackupOpen(false), [])
+  const closeKeyModal = useCallback(() => {
+    setKeyModalOpen(false)
+    try {
+      localStorage.setItem(KEY_ASKED_KEY, '1')
+    } catch {
+      // Not remembered; the form opens again on the next visit.
+    }
+  }, [])
   const symbolsInUse = useMemo(() => usedSymbols(transactions), [transactions])
 
   // While editing, the form sees the portfolio without the transaction being edited,
@@ -199,11 +220,26 @@ export default function App() {
     setTransactions(backup.transactions)
   }
 
+  // An empty key removes it. A key Finnhub doesn't accept isn't saved.
+  const saveFinnhubKey = async (key) => {
+    if (key && !(await isFinnhubKeyAccepted(key))) {
+      throw new Error('Finnhub no aceptó esa key. Revisá que esté copiada completa.')
+    }
+    await saveSettings({ finnhubKey: key })
+    setFinnhubKey(key)
+    setFinnhubKeyState(key)
+    closeKeyModal()
+  }
+
   return (
     <MoneyContext.Provider value={money}>
       <div className="app">
         <PortfolioHeader totals={totals} dayChange={dayChange} results={results} returns={returns}>
-          <LiveStatus cryptoStatus={cryptoStatus} stockStatus={stockStatus} />
+          <LiveStatus
+            cryptoStatus={cryptoStatus}
+            stockStatus={stockStatus}
+            onEditKey={() => setKeyModalOpen(true)}
+          />
           <CurrencyToggle currency={currency} rates={dollar.rates} failed={dollar.failed} onChange={changeCurrency} />
         </PortfolioHeader>
 
@@ -285,6 +321,8 @@ export default function App() {
             onClose={closeModal}
           />
         )}
+
+        {keyModalOpen && <FinnhubKeyModal currentKey={finnhubKey} onSave={saveFinnhubKey} onClose={closeKeyModal} />}
       </div>
     </MoneyContext.Provider>
   )

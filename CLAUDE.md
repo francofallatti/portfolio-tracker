@@ -14,9 +14,10 @@ Dashboard personal para seguir un portfolio de cripto y acciones. Proyecto 100% 
 
 ## Comandos
 
-- `npm run dev`: dev server en http://127.0.0.1:5173. Es necesario para guardar datos.
-- `npm run build`: build de producción.
-- `npm test`: tests con Vitest (`vitest run`). Cubren `utils/portfolio.js` y `utils/history.js`, de donde sale toda la plata, y `utils/validation.js`, que decide qué se puede guardar. Los componentes no tienen tests.
+- `npm run dev`: dev server en http://localhost:5173, sobre los datos de `src/data/`.
+- `npm run build`: build de producción (la app sola: sin el servidor local no carga datos).
+- `npm run build:exe`: arma `dist-exe/PortfolioTracker.exe`, la app en un solo archivo que corre sin Node (ver "Ejecutable"). Necesita Bun instalado.
+- `npm test`: tests con Vitest (`vitest run`). Cubren `utils/portfolio.js` y `utils/history.js`, de donde sale toda la plata, `utils/validation.js`, que decide qué se puede guardar, y el servidor local (`server/standalone.test.js`, contra una carpeta temporal). Los componentes no tienen tests.
 - `npm run restore -- <backup.csv>`: restaura un backup sin abrir la app (ver "Backup"). Es la salida cuando un JSON roto no la deja cargar.
 - `npm run lint`: ESLint 9 (`eslint.config.js`): recomendadas de JS más las reglas de hooks de React (`rules-of-hooks` es error, `exhaustive-deps` es aviso).
 
@@ -36,6 +37,7 @@ src/
                      AssetDetail, CashDetail y CatalogPanel (paneles laterales), PriceChart (precio de un activo
                      con sus compras y ventas, dentro de AssetDetail), TransactionModal, AssetPicker,
                      BackupModal (exportar y restaurar el backup en CSV),
+                     FinnhubKeyModal (cargar, cambiar o quitar la key de Finnhub),
                      ColorPicker, ConfirmButton (confirmación en dos clics para acciones destructivas),
                      CurrencyToggle (USD | ARS en el encabezado)
   hooks/             useLiveQuotes (cotizaciones), useSnapshots (guarda el historial),
@@ -44,22 +46,25 @@ src/
                      useMoney (moneda de los montos y dólar CCL)
   services/          binanceStream (WebSocket cripto), binanceMarkets (lista de pares USDT),
                      binanceKlines (precios pasados, por hora o por día),
-                     yahooChart (lo mismo para acciones, por el proxy del dev server),
-                     finnhubQuotes (cotización, búsqueda y perfil de acciones), assetCatalog (arma activos nuevos),
-                     dataStore (saveItem / deleteItems / updateItem → endpoints de escritura),
+                     yahooChart (lo mismo para acciones, por el servidor local),
+                     finnhubQuotes (cotización, búsqueda y perfil de acciones; guarda la key en uso), assetCatalog (arma activos nuevos),
+                     dataStore (loadData al arrancar; saveItem / deleteItems / updateItem / saveSettings → la API local),
                      dolarApi (dólar CCL de hoy y de cualquier día),
                      quoteCache (últimas cotizaciones, en `localStorage`)
   utils/             portfolio.js (cálculos), history.js (snapshots y series de la historia),
                      format.js (moneda y fechas),
                      colors.js (paleta de activos y color del efectivo),
-                     validation.js (validadores de los documentos JSON, los usa `vite.config.js`),
+                     validation.js (validadores de los documentos JSON, los usa `server/api.js`),
                      backup.js (el backup en CSV: exportar, leer, validar y comparar)
                      *.test.js: tests de Vitest al lado de cada archivo
   data/              documentos JSON (ver abajo)
-scripts/             restoreData.js (reemplaza los JSON por un backup; lo usan el dev server y el comando),
-                     restore.js (`npm run restore`)
+server/              api.js (la API local: lee y escribe los JSON, guarda la key y reenvía a Yahoo),
+                     standalone.js (servidor sin Vite: la app ya compilada más la API),
+                     exe.js (entrada del ejecutable), starterAssets.js (el catálogo de un portfolio vacío)
+scripts/             restoreData.js (reemplaza los JSON por un backup; lo usan la API y el comando),
+                     restore.js (`npm run restore`), build-exe.js (`npm run build:exe`)
 backups/             lo que reemplazó cada restauración (local, en `.gitignore`)
-vite.config.js       plugin `json-store` con los endpoints de escritura y el proxy `/api/yahoo`
+vite.config.js       plugin `json-store`, que monta `server/api.js` en el dev server sobre `src/data/`
 eslint.config.js     reglas de ESLint
 ```
 
@@ -72,7 +77,7 @@ eslint.config.js     reglas de ESLint
   - Splits (solo acciones): `{ id, date, type: 'split', symbol, newShares, oldShares }`: cada `oldShares` acciones pasan a ser `newShares`. Un 4:1 es `newShares: 4, oldShares: 1`; un contrasplit 1:10, `newShares: 1, oldShares: 10`.
   - `date` (en todas) es hora local sin zona: `YYYY-MM-DDTHH:mm`, o `YYYY-MM-DD` si no se cargó la hora (las anteriores al 29/10/2026 no la tienen). Sin hora cuenta desde las 00:00 de ese día. Se ordenan como texto, así que en un mismo día van primero las que no tienen hora. El validador exige uno de los dos formatos y rechaza fechas futuras (el formulario tampoco las deja elegir): contarían como tenencia de hoy, pero la historia las ignoraría.
   - Rentas (dividendos, intereses, staking; en la UI, "Renta"): `{ id, date, type: 'income', symbol, amount }` si se cobró en efectivo (USD, suma al efectivo) o `{ id, date, type: 'income', symbol, quantity }` si se cobró en especie (unidades de `symbol` con costo 0). Exactamente uno de los dos. `symbol` es el activo que la pagó, salvo en una renta en especie cobrada en otro activo (staking de BTC pagado en NEXO): ahí `symbol` es el que se recibe (`NEXO`, el que crece) y `source` el que la generó (`BTC`), que solo se muestra ("Generada por BTC"). Ninguna cuenta como aporte, así que todo suma al beneficio. Al editar, la forma de cobro queda fija.
-- `history.json`: snapshots del valor, `{ timestamp (ISO), value, byType: { crypto, stock, cash } }` (los arma `buildSnapshot`). Hoy son solo el respaldo del gráfico de historia, que se reconstruye con precios por hora (ver "Vistas por grupo"). Los anteriores al 27/10/2026 no tienen `byType`: solo cuentan para la vista "Todo". Es local: está en `.gitignore` porque cambia cada hora y ensuciaba los commits. En un clon nuevo, `vite.config.js` lo crea vacío. `assets.json` y `transactions.json` sí se versionan; en la rama `release` van vacíos (el catálogo, solo con USDT).
+- `history.json`: snapshots del valor, `{ timestamp (ISO), value, byType: { crypto, stock, cash } }` (los arma `buildSnapshot`). Hoy son solo el respaldo del gráfico de historia, que se reconstruye con precios por hora (ver "Vistas por grupo"). Los anteriores al 27/10/2026 no tienen `byType`: solo cuentan para la vista "Todo". Es local: está en `.gitignore` porque cambia cada hora y ensuciaba los commits. Si falta, `server/api.js` lo crea vacío. `assets.json` y `transactions.json` sí se versionan; en la rama `release` van vacíos (el catálogo, solo con USDT).
 
 Reglas:
 
@@ -84,9 +89,9 @@ Reglas:
 - PPC = costo promedio ponderado de las compras, comisión incluida. Las ventas bajan la cantidad sin cambiar el PPC. Una renta en especie suma unidades a costo 0, así que baja el PPC. Un split multiplica la cantidad por `splitRatio` (`newShares / oldShares`) y divide el PPC por lo mismo: lo invertido no cambia, no mueve plata ni cuenta como aporte. Resultado realizado de una venta = (precio − PPC) × cantidad − comisión.
 - `cashImpact` y `quantityImpact` dicen cuánto mueve cada transacción el efectivo y la cantidad de su símbolo. `buildLedger` y `replayValue` usan `quantityImpact`; para un tipo nuevo de transacción, empezá por esas dos. La excepción es el split: su efecto depende de lo que se tiene, así que `quantityImpact` da 0 y `buildLedger` y `replayValue` lo aplican aparte.
 - Una posición con cantidad ≤ 1e-9 se considera cerrada: sale de las tenencias (tabla, torta, totales) y pasa a `buildClosedPositions` (cantidad 0, realizado, rentas y `lastDate`). En la tabla van abajo, en "Posiciones cerradas (N) · Realizado ±$X", colapsadas y filtradas por grupo, con su realizado en la columna +/-. Un activo sin transacciones no es ni una cosa ni la otra.
-- Los tres archivos son arrays. Escritura: `POST /api/transactions`, `/api/history` y `/api/assets` agregan un ítem al array (responden 409 si ya existe: `/api/assets` por `symbol`, `/api/transactions` por `id`, así reimportar del broker no duplica órdenes). `DELETE /api/transactions` con `{ ids }` borra órdenes; `DELETE /api/assets` (ids = símbolos) borra activos y responde 409 si alguno tiene transacciones o es USDT (`findDeleteError`, con `usedSymbols`). `PATCH` con `{ id, changes }` modifica un ítem (un campo en `null` se quita): en `/api/assets` (id = `symbol`) `color`, `name`, `category` y `ratio` (símbolo y tipo no); en `/api/transactions`, `date`, `quantity`, `price`, `fee`, `funding`, `proceeds`, `amount`, `newShares` y `oldShares` (tipo y símbolo no: para eso se borra y se carga de nuevo). Solo existen con `npm run dev`; en un build de producción no hay dónde guardar. Rechazan con 403 los pedidos que traen un `Origin` distinto al del dev server (`isSameOrigin`), así otra web abierta en el navegador no puede tocar los datos.
+- Los tres archivos son arrays. La app no los importa: los pide al arrancar (`loadData` en `services/dataStore.js`, con `GET` a cada ruta), así un build no lleva datos adentro y el mismo sirve para cualquier portfolio. Escritura: `POST /api/transactions`, `/api/history` y `/api/assets` agregan un ítem al array (responden 409 si ya existe: `/api/assets` por `symbol`, `/api/transactions` por `id`, así reimportar del broker no duplica órdenes). `DELETE /api/transactions` con `{ ids }` borra órdenes; `DELETE /api/assets` (ids = símbolos) borra activos y responde 409 si alguno tiene transacciones o es USDT (`findDeleteError`, con `usedSymbols`). `PATCH` con `{ id, changes }` modifica un ítem (un campo en `null` se quita): en `/api/assets` (id = `symbol`) `color`, `name`, `category` y `ratio` (símbolo y tipo no); en `/api/transactions`, `date`, `quantity`, `price`, `fee`, `funding`, `proceeds`, `amount`, `newShares` y `oldShares` (tipo y símbolo no: para eso se borra y se carga de nuevo). Todo esto es `server/api.js` (`createApi({ dataDir, safetyDir })`), que corre en el dev server y en el ejecutable; un build servido como archivos sueltos no tiene dónde leer ni guardar y muestra un aviso. Toda la API rechaza con 403 los pedidos que traen un `Origin` distinto al propio (`isSameOrigin`), así otra web abierta en el navegador no puede leer ni tocar los datos.
 - Antes de guardar o borrar, `findLedgerError` reproduce todo en orden de fecha y bloquea si alguna venta queda sin compras previas que la cubran o si el efectivo queda negativo en algún momento.
-- Para hacer escribible un documento nuevo, sumalo a `STORES` en `vite.config.js` con su validador, que va en `utils/validation.js` con su test (los números tienen que ser números de verdad, no texto) (`uniqueKey` para evitar duplicados, `idKey` para habilitar DELETE, `findDeleteError` para bloquear borrados, `editable: { key, fields }` para habilitar PATCH sobre esos campos). Desde el front, usá `saveItem` / `deleteItems` / `updateItem` de `services/dataStore.js`.
+- Para hacer escribible un documento nuevo, sumalo a `stores` en `server/api.js` con su validador, que va en `utils/validation.js` con su test (los números tienen que ser números de verdad, no texto) (`uniqueKey` para evitar duplicados, `idKey` para habilitar DELETE, `findDeleteError` para bloquear borrados, `editable: { key, fields }` para habilitar PATCH sobre esos campos). Desde el front, usá `saveItem` / `deleteItems` / `updateItem` de `services/dataStore.js`.
 
 ## Backup (CSV)
 
@@ -98,7 +103,20 @@ El botón "Backup" de la barra de la tabla abre `BackupModal`: descarga un CSV c
 - No sobrevive a Excel: con configuración regional argentina guarda con `;` y coma decimal. `parseBackupCsv` lo rechaza (columnas que faltan, o una fila con más celdas que el encabezado) y dice en qué línea.
 - Restaurar reemplaza todo, no mezcla: catálogo y transacciones quedan iguales al backup. Antes de confirmar (dos clics, `ConfirmButton`), el formulario muestra qué cambia contra lo que hay (`summarizeRestore`: nuevas, distintas y las que se pierden por no estar en el backup).
 - `findBackupError` valida el conjunto con las mismas reglas que los endpoints: cada ítem con su validador, sin repetidos, cada transacción con su activo (y su `source`) en el catálogo del backup, y `findLedgerError`. Lo corren el formulario y, de nuevo, `restoreData`.
-- `restoreData` (`scripts/restoreData.js`) escribe los dos JSON. Antes copia los que había a `backups/before-restore-<fecha y hora>/`, tal cual, sin leerlos (un JSON roto también se guarda), y escribe cada archivo a un temporal y lo renombra. Lo usan `PUT /api/backup` (cuerpo `{ assets, transactions }`, mismo control de origen que el resto) y `npm run restore -- <backup.csv>`, para cuando la app no abre.
+- `restoreData` (`scripts/restoreData.js`) escribe los dos JSON en la carpeta de datos que le pasen (por defecto, `src/data/`). Antes copia los que había a `backups/before-restore-<fecha y hora>/`, tal cual, sin leerlos (un JSON roto también se guarda), y escribe cada archivo a un temporal y lo renombra. Lo usan `PUT /api/backup` (cuerpo `{ assets, transactions }`, mismo control de origen que el resto), `npm run restore -- <backup.csv>`, para cuando la app no abre, y el ejecutable cuando recibe un CSV.
+
+## Ejecutable
+
+Para usar la app sin instalar Node: un solo archivo (`PortfolioTracker.exe`, unos 86 MB) que se baja de los Releases del repo público y se abre con doble clic.
+
+- `npm run build:exe` (`scripts/build-exe.js`) hace el build de Vite, escribe cada archivo de `dist/` en base64 en `server/dist-assets.generated.js` y compila `server/exe.js` con `bun build --compile`, que mete adentro el runtime de Bun. Sale en `dist-exe/`. Las dos cosas generadas están en `.gitignore`: el ejecutable no se commitea (GitHub rechaza archivos de más de 100 MB y cada versión engordaría el repo), se sube como Release.
+- Al abrirlo, `server/exe.js` levanta `startServer` (`server/standalone.js`: la app compilada más `server/api.js`) en `http://127.0.0.1:4783` y abre el navegador. El puerto es fijo porque el navegador guarda las preferencias y las últimas cotizaciones por dirección. Si está ocupado por otra copia de la app (`GET /api/ping`), solo abre el navegador; si lo ocupa otra cosa, prueba los 9 siguientes.
+- Los datos van en una carpeta `data/` al lado del ejecutable (los tres JSON, `settings.json` y `backups/`), creada vacía la primera vez (catálogo solo con USDT). Reemplazar el ejecutable por uno más nuevo no los toca.
+- Queda una ventana de consola con la dirección; cerrarla apaga la app.
+- `PortfolioTracker.exe <backup.csv>` (o arrastrar el CSV sobre el ejecutable) restaura ese backup antes de arrancar: es el `npm run restore` de quien no tiene Node.
+- No lleva datos ni la key: el build no importa los JSON ni lee `.env.local`.
+- No está firmado: Windows muestra "Windows protegió su PC" la primera vez ("Más información" → "Ejecutar de todas formas"). Solo se arma para Windows.
+- `server/` usa `node:http`, así corre igual en Node (los tests, el dev server) y en Bun (el ejecutable).
 
 ## Vistas por grupo (Todo / Criptomonedas / Acciones)
 
@@ -108,10 +126,10 @@ El botón "Backup" de la barra de la tabla abre `BackupModal`: descarga un CSV c
 - `filterByGroup` filtra las tenencias. Los pesos de la torta son relativos al grupo, pero la barra de peso de la tabla sigue siendo sobre el portfolio entero.
 - La serie de la historia sale de `useGroupHistory`: los tres grupos se reconstruyen hora por hora (`replayValue` en `utils/history.js`) con las cantidades de cada momento según las transacciones y los precios por hora de los últimos 30 días. No tiene huecos aunque la app haya estado cerrada, y una transacción con fecha pasada corrige toda la serie.
   - Cripto: velas de Binance (`binanceKlines`), al precio de apertura de cada hora. USDT vale 1 y un símbolo sin velas usa su precio actual.
-  - Acciones: barras de 60 min de Yahoo Finance (`yahooChart`; API no oficial, sin key). Yahoo no permite CORS, así que el navegador pide `/api/yahoo/...` y el dev server lo reenvía (`server.proxy` en `vite.config.js`, con User-Agent: sin él Yahoo responde 429). Cada barra aporta su apertura al empezar y su cierre al terminar; fuera de horario de mercado se mantiene el último precio (`alignPrices`). Los precios vienen ajustados por splits (antes de un 4:1 valen la cuarta parte), así que `replayValue` cuenta cada transacción en acciones post-split: su cantidad × el ratio de los splits posteriores. El precio de hoy, que usa el respaldo, también es post-split.
+  - Acciones: barras de 60 min de Yahoo Finance (`yahooChart`; API no oficial, sin key). Yahoo no permite CORS, así que el navegador pide `/api/yahoo/...` y el servidor local lo reenvía (`proxyYahoo` en `server/api.js`, con User-Agent: sin él Yahoo responde 429). Cada barra aporta su apertura al empezar y su cierre al terminar; fuera de horario de mercado se mantiene el último precio (`alignPrices`). Los precios vienen ajustados por splits (antes de un 4:1 valen la cuarta parte), así que `replayValue` cuenta cada transacción en acciones post-split: su cantidad × el ratio de los splits posteriores. El precio de hoy, que usa el respaldo, también es post-split.
   - Los rangos largos (90D, 1A, Todo) usan la misma reconstrucción con un punto por día (00:00 UTC) desde la primera transacción: velas diarias de Binance (hasta 1000, unos 2.7 años; antes de eso usa el primer precio) y barras diarias de Yahoo. `HISTORY_RANGES` (`utils/history.js`) dice qué resolución usa cada rango (`hour` o `day`), `historyTimes` arma los tiempos y los servicios reciben `(symbol, resolution, from)`. El rango elegido vive en `App` (`rangeKey`), porque decide qué serie se pide. La serie diaria se pide recién al elegir un rango largo.
   - Los precios se piden solo para los grupos visibles (Todo pide los dos), con caché de 10 min, y se refrescan cada 10 min.
-  - Respaldo: si falta el precio de alguna acción (Yahoo caído, o un build de producción sin proxy), "Todo" muestra los snapshots tal cual y "Acciones" estima con los precios de hoy hasta el primer snapshot con `byType` y después usa los snapshots (`getGroupHistory` suma su `byType`). El gráfico sombrea el tramo estimado y lo aclara abajo.
+  - Respaldo: si falta el precio de alguna acción (Yahoo caído), "Todo" muestra los snapshots tal cual y "Acciones" estima con los precios de hoy hasta el primer snapshot con `byType` y después usa los snapshots (`getGroupHistory` suma su `byType`). El gráfico sombrea el tramo estimado y lo aclara abajo.
   - Una transacción cuenta desde su fecha y hora (`transactionTime` en `utils/history.js`); si no tiene hora, desde el inicio de su día. Como la serie es por hora, una operación de las 14:30 aparece en el punto de las 15:00.
 - El encabezado (total y beneficio) siempre es del portfolio entero.
 - Mientras se ve un grupo, los títulos de los gráficos lo nombran ("Historia · Acciones").
@@ -126,7 +144,7 @@ Entre el resumen y los movimientos va "Precio" (`PriceChart`), salvo en USDT, qu
 - Cada compra es un triángulo verde hacia arriba y cada venta uno rojo hacia abajo, en su fecha y al precio al que se hizo (`tradeMarkers` en `utils/history.js`). Como Yahoo ajusta los precios por splits, el precio de una orden anterior a un split se divide por el ratio. Rentas y splits no se marcan. El tooltip de un punto lista las órdenes más cercanas a él, con la cantidad y el precio guardados (en dólares).
 - La línea punteada es el PPC de lo que se tiene (no aparece en una posición cerrada). El eje se estira para que entren el PPC y todas las órdenes del rango (`ifOverflow="extendDomain"`).
 - El % del encabezado del gráfico ("Precio Todo: −51%") es el cambio del precio en el rango, no el rendimiento de la posición (por eso dice "Precio" y lo aclara en el `title`): con compras a distintos precios no coinciden. El eje y el precio del tooltip siguen la moneda elegida.
-- Sin precios (Yahoo caído, o un build de producción sin proxy) avisa que no se pudieron cargar.
+- Sin precios (Yahoo caído) avisa que no se pudieron cargar.
 
 Editar una transacción reusa `TransactionModal` con `editing`: precarga los campos y oculta el tipo y el activo. App le pasa las tenencias y el efectivo calculados sin esa transacción, así lo "disponible" es lo que ella puede usar. Antes de guardar, `findLedgerError` valida el historial completo con el cambio.
 
@@ -178,7 +196,8 @@ En el formulario de transacción, `AssetPicker` busca primero en el catálogo y 
 ## Cotizaciones en vivo
 
 - Cripto: WebSocket público de Binance (`data-stream.binance.vision`), sin API key. USDT queda fijo en 1.
-- Acciones y ETFs: Finnhub REST cada 15 s, o más espaciado con muchos símbolos (1.5 s por símbolo, para no pasar el límite gratis de 60 consultas por minuto). Requiere `VITE_FINNHUB_API_KEY` en `.env.local` (ver `.env.example`). La key queda expuesta en el navegador. Sin key se usan los precios de `assets.json`.
+- Acciones y ETFs: Finnhub REST cada 15 s, o más espaciado con muchos símbolos (1.5 s por símbolo, para no pasar el límite gratis de 60 consultas por minuto). Requiere una key de Finnhub, que se carga en la app (ver abajo). La key queda expuesta en el navegador. Sin key se usan los precios de `assets.json`.
+- La key de Finnhub: "Key de Finnhub" en el encabezado (al lado del estado de las cotizaciones) abre `FinnhubKeyModal`, que también se abre solo la primera vez que no hay key (se recuerda en `localStorage`). Antes de guardar, `isFinnhubKeyAccepted` le pregunta a Finnhub si la acepta. Se guarda con `PUT /api/settings` en `settings.json`, al lado de los otros documentos (`{ finnhubKey }`, validado por `isValidSettings`; en `src/data/` está en `.gitignore`); vacía, se quita. `GET /api/settings` la devuelve al arrancar y `main.jsx` la pone en `services/finnhubQuotes.js` (`setFinnhubKey`); `App` la tiene en estado y se la pasa a `useLiveQuotes`, así las cotizaciones arrancan al guardarla, sin recargar. En desarrollo, `VITE_FINNHUB_API_KEY` de `.env.local` sigue sirviendo: `vite.config.js` se la pasa a la API, que la usa mientras no haya una guardada. No se lee con `import.meta.env`, así ningún build la lleva adentro.
 - Sin cripto para seguir (catálogo solo con USDT, como en la release), el stream no se abre y el estado es `idle` ("Cripto: Sin activos"), no "Conectando…".
 - `ready` (de `useLiveQuotes`) es true cuando todos los símbolos con feed recibieron cotización en vivo.
 - Últimas cotizaciones guardadas (`services/quoteCache.js`): `useLiveQuotes` guarda en `localStorage` (`last-quotes`, como mucho cada 5 s) la última cotización de cada símbolo y arranca con ellas, así al abrir el total usa los precios de la última visita y no el `price` de `assets.json`. Es por navegador: en uno nuevo, o para un activo que nunca cotizó, sigue el respaldo de `assets.json`. Las guardadas no cuentan para `ready`, así que no se guarda un snapshot con precios viejos. No se escriben en `assets.json` porque está versionado y cambiaría en cada commit.

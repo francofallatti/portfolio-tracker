@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidAsset, isValidSnapshot, isValidTransaction, localDay } from './validation.js'
+import { isValidAsset, isValidSettings, isValidSnapshot, isValidTransaction, localDay } from './validation.js'
 
 const TODAY = '2026-11-12'
 const valid = (transaction) => isValidTransaction(transaction, TODAY)
@@ -88,5 +88,20 @@ describe('isValidAsset', () => {
     expect(isValidAsset({ ...asset, category: '' })).toBe(true)
     expect(isValidAsset({ ...asset, ratio: '120' })).toBe(false)
     expect(isValidAsset({ ...asset, type: 'crypto', ratio: 120 })).toBe(false)
+  })
+})
+
+describe('isValidSettings', () => {
+  it('accepts a key, or an empty one when there is none', () => {
+    expect(isValidSettings({ finnhubKey: 'abc123_DEF-456' })).toBe(true)
+    expect(isValidSettings({ finnhubKey: '' })).toBe(true)
+  })
+
+  it('rejects a key that is not text, one with odd characters, or any other field', () => {
+    expect(isValidSettings({ finnhubKey: 123 })).toBe(false)
+    expect(isValidSettings({ finnhubKey: 'abc def' })).toBe(false)
+    expect(isValidSettings({ finnhubKey: 'abc', other: true })).toBe(false)
+    expect(isValidSettings({})).toBe(false)
+    expect(isValidSettings(null)).toBe(false)
   })
 })

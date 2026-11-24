@@ -1,5 +1,5 @@
-// Replaces the catalog and the transactions with a backup. Shared by the dev server
-// (`PUT /api/backup`) and by `npm run restore`, for when the app doesn't open.
+// Replaces the catalog and the transactions with a backup. Shared by the local API
+// (`PUT /api/backup`), by `npm run restore` and by the executable, for when the app doesn't open.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

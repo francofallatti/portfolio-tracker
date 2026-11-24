@@ -59,7 +59,7 @@ const tradedSymbols = (catalog, transactions, type) =>
 
 // The `{ timestamp, value }` series the history chart plots for a group, rebuilt from the
 // transactions and the prices of each moment: crypto from Binance, stocks from Yahoo
-// (through the dev server). So it has no gaps while the app was closed.
+// (through the local server). So it has no gaps while the app was closed.
 // `resolution` is the step: 'hour' covers the last 30 days hour by hour; 'day', every
 // day since the first transaction (the long ranges of the chart).
 // A crypto without candles uses its current price (`catalog` carries them); the

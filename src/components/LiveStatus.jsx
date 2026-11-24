@@ -1,10 +1,12 @@
+import { KeyRound } from 'lucide-react'
+
 const LABELS = {
   live: 'En vivo',
   connecting: 'Conectando…',
   idle: 'Sin activos',
   offline: 'Sin conexión',
   error: 'Error',
-  disabled: 'Sin API key (datos de ejemplo)',
+  disabled: 'Sin key',
 }
 
 const COLORS = {
@@ -25,11 +27,15 @@ function Item({ name, status }) {
   )
 }
 
-export default function LiveStatus({ cryptoStatus, stockStatus }) {
+// Stock quotes need the user's Finnhub key: `onEditKey` opens the form to enter or change it.
+export default function LiveStatus({ cryptoStatus, stockStatus, onEditKey }) {
   return (
     <div className="live-status">
       <Item name="Cripto" status={cryptoStatus} />
       <Item name="Acciones" status={stockStatus} />
+      <button type="button" className="live-status__key" onClick={onEditKey}>
+        <KeyRound size={13} /> {stockStatus === 'disabled' ? 'Cargar key de Finnhub' : 'Key de Finnhub'}
+      </button>
     </div>
   )
 }

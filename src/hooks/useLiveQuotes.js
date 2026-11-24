@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { connectBinanceTickers } from '../services/binanceStream.js'
-import { FINNHUB_API_KEY, fetchStockQuote } from '../services/finnhubQuotes.js'
+import { fetchStockQuote } from '../services/finnhubQuotes.js'
 import { readSavedQuotes, saveQuotes } from '../services/quoteCache.js'
 
 const STOCK_POLL_INTERVAL = 15000
@@ -15,13 +15,13 @@ const isLiveCrypto = (asset) => asset.type === 'crypto' && asset.symbol !== 'USD
 const isStock = (asset) => asset.type === 'stock'
 
 // `quotes` starts with the ones saved on the last visit and takes the live ones as they
-// arrive; `ready` only counts the live ones.
-export function useLiveQuotes(assets) {
+// arrive; `ready` only counts the live ones. Stocks are only quoted with a Finnhub key.
+export function useLiveQuotes(assets, finnhubKey) {
   const [savedQuotes] = useState(readSavedQuotes)
   const [quotes, setQuotes] = useState({})
   const lastSave = useRef(0)
   const [cryptoStatus, setCryptoStatus] = useState('connecting')
-  const [stockStatus, setStockStatus] = useState(FINNHUB_API_KEY ? 'connecting' : 'disabled')
+  const [stockStatus, setStockStatus] = useState('connecting')
 
   useEffect(() => {
     const symbols = assets.filter(isLiveCrypto).map((asset) => asset.symbol)
@@ -34,8 +34,9 @@ export function useLiveQuotes(assets) {
   }, [assets])
 
   useEffect(() => {
-    if (!FINNHUB_API_KEY) return
+    if (!finnhubKey) return
 
+    setStockStatus('connecting')
     const symbols = assets.filter(isStock).map((asset) => asset.symbol)
     const interval = Math.max(STOCK_POLL_INTERVAL, symbols.length * MS_PER_STOCK_REQUEST)
     let timer
@@ -62,7 +63,7 @@ export function useLiveQuotes(assets) {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [assets])
+  }, [assets, finnhubKey])
 
   const latestQuotes = useMemo(() => ({ ...savedQuotes, ...quotes }), [savedQuotes, quotes])
 
@@ -74,11 +75,16 @@ export function useLiveQuotes(assets) {
 
   // True once every symbol with a live feed has received at least one quote.
   const ready = assets
-    .filter((asset) => isLiveCrypto(asset) || (FINNHUB_API_KEY && isStock(asset)))
+    .filter((asset) => isLiveCrypto(asset) || (finnhubKey && isStock(asset)))
     .every((asset) => quotes[asset.symbol])
 
   // Without crypto to follow, the stream never opens: there's nothing to wait for.
   const hasLiveCrypto = assets.some(isLiveCrypto)
 
-  return { quotes: latestQuotes, cryptoStatus: hasLiveCrypto ? cryptoStatus : 'idle', stockStatus, ready }
+  return {
+    quotes: latestQuotes,
+    cryptoStatus: hasLiveCrypto ? cryptoStatus : 'idle',
+    stockStatus: finnhubKey ? stockStatus : 'disabled',
+    ready,
+  }
 }

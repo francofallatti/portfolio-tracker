@@ -66,6 +66,38 @@ h3 {
   gap: 6px;
 }
 
+.live-status__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.live-status__key:hover {
+  color: var(--text);
+}
+
+/* Shown instead of the app when the data can't be loaded */
+
+.load-error {
+  max-width: 560px;
+  margin: 80px auto;
+  padding: 0 20px;
+  color: var(--muted);
+}
+
+.load-error h1 {
+  font-size: 20px;
+  color: var(--text);
+}
+
 .live-status__dot {
   width: 8px;
   height: 8px;
@@ -1034,6 +1066,10 @@ h3 {
   margin: 0;
   font-size: 13px;
   color: var(--muted);
+}
+
+.modal__hint a {
+  color: var(--accent);
 }
 
 .modal__error {

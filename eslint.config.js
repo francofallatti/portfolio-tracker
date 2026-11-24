@@ -3,7 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 
 export default [
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'dist-exe', 'server/dist-assets.generated.js'] },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -22,7 +22,7 @@ export default [
     },
   },
   {
-    files: ['vite.config.js', 'eslint.config.js', 'scripts/**'],
+    files: ['vite.config.js', 'eslint.config.js', 'scripts/**', 'server/**'],
     languageOptions: { globals: globals.node },
   },
 ]

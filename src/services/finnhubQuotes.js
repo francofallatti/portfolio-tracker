@@ -1,15 +1,35 @@
-// REST API from Finnhub. The key lives in VITE_FINNHUB_API_KEY, which is
-// exposed to the browser, so use a key with no billing and rotate it if shared.
+// REST API from Finnhub. The key is the user's own and is entered in the app: it's kept
+// with the rest of the data (settings.json) and loaded on start. It's exposed to the
+// browser, so use a key with no billing and rotate it if shared.
 const BASE_URL = 'https://finnhub.io/api/v1'
 
-export const FINNHUB_API_KEY = import.meta.env.VITE_FINNHUB_API_KEY
+let apiKey = ''
+
+export const getFinnhubKey = () => apiKey
+
+export const setFinnhubKey = (key) => {
+  apiKey = key ?? ''
+}
 
 const request = async (path, params) => {
-  const query = new URLSearchParams({ ...params, token: FINNHUB_API_KEY })
+  const query = new URLSearchParams({ ...params, token: apiKey })
   const response = await fetch(`${BASE_URL}${path}?${query}`)
   if (!response.ok) throw new Error(`Finnhub ${response.status} for ${path}`)
 
   return response.json()
+}
+
+// Whether Finnhub accepts `key`, asked before saving it. Throws if it can't be asked.
+export async function isFinnhubKeyAccepted(key) {
+  let response
+  try {
+    response = await fetch(`${BASE_URL}/quote?${new URLSearchParams({ symbol: 'AAPL', token: key })}`)
+  } catch {
+    throw new Error('No se pudo verificar la key: revisá la conexión.')
+  }
+  if (response.status === 401 || response.status === 403) return false
+  if (!response.ok) throw new Error(`No se pudo verificar la key (Finnhub respondió ${response.status}).`)
+  return true
 }
 
 export async function fetchStockQuote(symbol) {

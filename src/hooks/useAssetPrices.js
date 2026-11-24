@@ -5,7 +5,7 @@ import { historyTimes } from '../utils/history.js'
 
 // The past prices of one asset since `from` (ms), as `{ time, price }` oldest first:
 // hourly or daily candles from Binance (crypto) or bars from Yahoo (stocks, through the
-// dev server). `failed` when they couldn't be loaded.
+// local server). `failed` when they couldn't be loaded.
 // The hourly series is asked from the same start as the history chart's, to share its cache.
 export function useAssetPrices({ symbol, type }, resolution, from) {
   const key = `${symbol}:${resolution}:${from}`
