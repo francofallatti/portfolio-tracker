@@ -2,32 +2,15 @@
 
 Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo hecho, los dos con las mismas secciones numeradas. Al terminar algo, marcalo con `[x]`, pasalo a su sección dentro de "Hecho" y actualizá `CLAUDE.md` si cambió la arquitectura.
 
-## Orden sugerido
-
-1. Decidir si vale la pena publicarla para usarla desde el celular.
-
 ## Pendiente
 
 ### 2. Funcionalidad para un tracker completo
 
-- [ ] **Intereses del efectivo** (los que paga el broker por el saldo en USD): hoy una renta tiene que venir de un activo del catálogo, y el efectivo no lo es.
 - [ ] **Importar el historial de Binance o del broker** desde sus exports, de una. Baja prioridad: el backup propio ya está (ver "Hecho").
 
 ### 3. Historia y métricas
 
 - [ ] **Comparar contra un benchmark** (SPY o BTC en el mismo período).
-
-### 4. Usarla fuera de esta compu
-
-Hoy corre en una compu (con `npm run dev` o con el ejecutable) y los datos quedan ahí. Es el cambio más grande; vale la pena solo si se va a usar desde otro lado (por ejemplo el celular).
-
-- [ ] **Ejecutable para Mac y Linux**: Bun los compila desde Windows (`--target`), pero falta dónde probarlos.
-- [ ] **Firmar el ejecutable**, para que Windows no avise la primera vez. El certificado se paga por año.
-
-- [ ] **Base de datos real** (por ejemplo Supabase) en lugar de los JSON.
-- [ ] **Login**: son datos financieros.
-- [ ] **Deploy** (Vercel o Netlify, gratis) con una función que esconda la key de Finnhub.
-- [ ] **Snapshot programado del lado del servidor**, así la historia no depende de tener la pestaña abierta.
 
 ### 5. Calidad técnica
 
