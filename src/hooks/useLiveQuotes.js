@@ -9,6 +9,9 @@ const STOCK_POLL_INTERVAL = 15000
 const MS_PER_STOCK_REQUEST = 1500
 // Binance ticks every second: the last quotes are saved at most this often.
 const SAVE_INTERVAL = 5000
+// Every quote re-renders the whole app, and each crypto ticks on its own every second:
+// they are collected and applied together, at most this often.
+const QUOTE_BATCH_INTERVAL = 2000
 
 // Stablecoins are pegged, so they don't need a live feed.
 const isLiveCrypto = (asset) => asset.type === 'crypto' && asset.symbol !== 'USDT'
@@ -27,10 +30,31 @@ export function useLiveQuotes(assets, finnhubKey) {
     const symbols = assets.filter(isLiveCrypto).map((asset) => asset.symbol)
     if (!symbols.length) return
 
-    return connectBinanceTickers(symbols, {
-      onQuote: (symbol, quote) => setQuotes((prev) => ({ ...prev, [symbol]: quote })),
+    let pending = {}
+    let timer = null
+    let lastFlush = 0
+
+    const flush = () => {
+      timer = null
+      lastFlush = Date.now()
+      const batch = pending
+      pending = {}
+      setQuotes((prev) => ({ ...prev, ...batch }))
+    }
+
+    const disconnect = connectBinanceTickers(symbols, {
+      // The first quotes go out right away; after that, one update per interval.
+      onQuote: (symbol, quote) => {
+        pending[symbol] = quote
+        timer ??= setTimeout(flush, Math.max(0, QUOTE_BATCH_INTERVAL - (Date.now() - lastFlush)))
+      },
       onStatus: setCryptoStatus,
     })
+
+    return () => {
+      clearTimeout(timer)
+      disconnect()
+    }
   }, [assets])
 
   useEffect(() => {

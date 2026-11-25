@@ -62,14 +62,19 @@ const tradedSymbols = (catalog, transactions, type) =>
 // (through the local server). So it has no gaps while the app was closed.
 // `resolution` is the step: 'hour' covers the last 30 days hour by hour; 'day', every
 // day since the first transaction (the long ranges of the chart).
-// A crypto without candles uses its current price (`catalog` carries them); the
+// A crypto without candles uses its current price (`pricedCatalog` carries them); the
 // stablecoin has no USDT pair and keeps its catalog price (1).
+// `catalog` is the saved one: live prices change with every quote, so the series only
+// follows them while some symbol has no past prices. Otherwise each quote would rebuild it.
 // Stocks are only rebuilt with prices for all of them. Otherwise (Yahoo down, or a
 // production build without the proxy) it falls back to the saved snapshots: "all" plots
 // them as they are; "stock" estimates with today's prices before the first one with
 // `byType` (`estimatedUntil` marks where that ends).
 // `flows` is the money that came into the group, `{ time, amount }` (groupFlows).
-export function useGroupHistory(groupKey, { snapshots, transactions: savedTransactions, catalog, resolution }) {
+export function useGroupHistory(
+  groupKey,
+  { snapshots, transactions: savedTransactions, catalog, pricedCatalog, resolution },
+) {
   // USDT paid out by sales counts as held from the time of the sale.
   const transactions = useMemo(() => expandTransactions(savedTransactions), [savedTransactions])
   const types = getGroupTypes(groupKey)
@@ -94,11 +99,19 @@ export function useGroupHistory(groupKey, { snapshots, transactions: savedTransa
     return groupFlows(transactions, scope)
   }, [types, withCash, catalog, transactions])
 
+  const loading = cryptoLoading || stockLoading
+  const usesCurrentPrices =
+    !loading &&
+    [...(withCrypto ? liveCryptoSymbols : []), ...(withStocks ? stockSymbols : [])].some(
+      (symbol) => !(withCrypto && cryptoPrices[symbol]?.size) && !(withStocks && stockPrices[symbol]?.size),
+    )
+  const priceSource = usesCurrentPrices ? pricedCatalog : catalog
+
   const series = useMemo(() => {
-    if (cryptoLoading || stockLoading) return { history: [], loading: true, estimatedUntil: null }
+    if (loading) return { history: [], loading: true, estimatedUntil: null }
 
     const times = historyTimes(resolution, firstTime)
-    const currentPrices = new Map(catalog.map((asset) => [asset.symbol, asset.price]))
+    const currentPrices = new Map(priceSource.map((asset) => [asset.symbol, asset.price]))
     const currentPrice = (symbol) => currentPrices.get(symbol) ?? 0
 
     if (!withStocks || stockSymbols.every((symbol) => stockPrices[symbol])) {
@@ -129,13 +142,12 @@ export function useGroupHistory(groupKey, { snapshots, transactions: savedTransa
     withCash,
     snapshots,
     transactions,
-    catalog,
+    priceSource,
     cryptoSymbols,
     stockSymbols,
     cryptoPrices,
-    cryptoLoading,
     stockPrices,
-    stockLoading,
+    loading,
   ])
 
   return { ...series, flows }

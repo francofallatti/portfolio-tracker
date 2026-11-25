@@ -24,7 +24,6 @@ Datos seguros:
 
 Rendimiento (sin medir, sale de leer el código):
 
-- [ ] **Cada tick de Binance recalcula todo**: re-renderiza la app entera y reconstruye la historia, porque `useGroupHistory` depende del catálogo con precios en vivo y `HistoryChart` rearma sus datos en cada render. Agrupar las cotizaciones cada 1 o 2 segundos.
 - [ ] **Cambiar un color reconecta el WebSocket** y reinicia el polling: los efectos de `useLiveQuotes` dependen del catálogo entero y no de la lista de símbolos.
 - [ ] **Cotizaciones de activos que no se tienen**: se piden para todo el catálogo, lo que gasta cuota de Finnhub.
 
@@ -82,6 +81,7 @@ Mantenimiento:
 
 ### 5. Calidad técnica
 
+- [x] **Cada cotización de Binance ya no recalcula todo.** Las cotizaciones de cripto se juntan y se aplican cada 2 segundos (antes, una actualización por moneda por segundo). La historia ya no se reconstruye con cada cotización: solo sigue los precios en vivo si a algún activo le faltan precios pasados. `HistoryChart` conserva los puntos pasados y solo cambia el último.
 - [x] **Recharts 3 y bundle partido.** Recharts pasó de 2.13 a 3.11. El build sale en tres archivos (la app, React con los íconos, y los gráficos) y ya no avisa por el tamaño. La torta usa `shape` en vez de `Cell`, que Recharts 4 va a sacar, y no se anima: cada cotización reiniciaba la animación.
 - [x] **El formulario ya no se cierra al soltar el mouse afuera**: solo cierra si el clic empieza y termina en el fondo, así seleccionar texto en un campo no pierde lo cargado.
 - [x] **Validadores más estrictos**, en `utils/validation.js` con tests: números de verdad (no texto), comisión válida, sin fechas futuras e `id` único en las transacciones (reimportar no duplica).

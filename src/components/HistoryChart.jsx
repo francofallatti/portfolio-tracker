@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   formatDate,
@@ -46,12 +47,15 @@ export default function HistoryChart({
   const range = HISTORY_RANGES.find((item) => item.key === rangeKey)
 
   const now = Date.now()
-  const data = [
-    ...snapshots
+  // Only the last point follows the live value: the past ones are kept between quotes.
+  const past = useMemo(() => {
+    const from = Date.now() - range.duration
+    return snapshots
       .map((snapshot) => ({ time: Date.parse(snapshot.timestamp), value: snapshot.value }))
-      .filter((point) => now - point.time <= range.duration),
-    { time: now, value: currentValue },
-  ].map((point) => ({ ...point, contributed: contributedUntil(flows, point.time) }))
+      .filter((point) => point.time >= from)
+      .map((point) => ({ ...point, contributed: contributedUntil(flows, point.time) }))
+  }, [snapshots, flows, range.duration])
+  const data = [...past, { time: now, value: currentValue, contributed: contributedUntil(flows, now) }]
   const hasHistory = data.length > 1
   const daily = range.resolution === 'day'
   const formatTick = tickFormatter(data.at(-1).time - data[0].time)

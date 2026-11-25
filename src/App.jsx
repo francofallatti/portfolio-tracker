@@ -101,7 +101,7 @@ export default function App({ initial, keyAsked }) {
   const snapshots = useSnapshots(initial.snapshots, assets, ready)
 
   const groupAssets = useMemo(() => filterByGroup(assets, groupKey), [assets, groupKey])
-  const groupHistory = useGroupHistory(groupKey, { snapshots, transactions, catalog: pricedCatalog, resolution })
+  const groupHistory = useGroupHistory(groupKey, { snapshots, transactions, catalog, pricedCatalog, resolution })
   const groupValue = groupAssets.reduce((sum, asset) => sum + asset.value, 0)
   // Shown next to the chart titles while they show only part of the portfolio.
   const groupLabel = groupKey === 'all' ? null : ASSET_GROUPS.find((group) => group.key === groupKey).label
