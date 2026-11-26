@@ -26,7 +26,7 @@ Tus datos quedan en la carpeta `data`, al lado del ejecutable. Para actualizar, 
 
 ## Cómo correrlo desde el código
 
-Necesitás [Node.js](https://nodejs.org) 18 o más nuevo.
+Necesitás [Node.js](https://nodejs.org) 22.12 o más nuevo.
 
 ```bash
 npm install
@@ -72,4 +72,4 @@ Si subís tu copia a un repo público, **no commitees `assets.json` ni `transact
 
 El proyecto está hecho con [Claude Code](https://claude.com/claude-code). `CLAUDE.md` explica la arquitectura, los datos y las reglas de cálculo; `ROADMAP.md`, lo pendiente y lo hecho.
 
-Stack: React 18, Vite 5, Recharts 3 y CSS plano, en JavaScript. El ejecutable se compila con Bun.
+Stack: React 18, Vite 8, Recharts 3 y CSS plano, en JavaScript. El ejecutable se compila con Bun.

@@ -20,12 +20,15 @@ function jsonStore(finnhubKey) {
 export default defineConfig(({ mode }) => ({
   plugins: [react(), jsonStore(loadEnv(mode, process.cwd()).VITE_FINNHUB_API_KEY)],
   build: {
-    rollupOptions: {
+    // The charts library is most of the bundle and changes far less often than the app.
+    rolldownOptions: {
       output: {
-        // The charts library is most of the bundle and changes far less often than the app.
-        manualChunks: (id) => {
-          if (!id.includes('node_modules')) return undefined
-          return /node_modules\/(react|react-dom|scheduler|lucide-react)\//.test(id) ? 'vendor' : 'charts'
+        codeSplitting: {
+          // Without the priority, React ends up in `charts`, which also depends on it.
+          groups: [
+            { name: 'vendor', test: /node_modules[\\/](react|react-dom|scheduler|lucide-react)[\\/]/, priority: 2 },
+            { name: 'charts', test: /node_modules/, priority: 1 },
+          ],
         },
       },
     },

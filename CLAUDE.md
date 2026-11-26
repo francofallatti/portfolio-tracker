@@ -23,10 +23,11 @@ Dashboard personal para seguir un portfolio de cripto y acciones. Proyecto 100% 
 
 ## Stack
 
-React 18 + Vite 5, JavaScript (sin TypeScript), Recharts 3 para gráficos, lucide-react para íconos. CSS plano en un único `src/App.css`.
+React 18 + Vite 8, JavaScript (sin TypeScript), Recharts 3 para gráficos, lucide-react para íconos. CSS plano en un único `src/App.css`.
 
+- Vite 8 y Vitest 5 piden Node 22.12 o más nuevo (solo para desarrollar: el ejecutable no usa Node).
 - `react-is` es una dependencia que pide Recharts 3: tiene que ir en la misma versión que React.
-- El build sale en tres archivos (`manualChunks` en `vite.config.js`): la app, `vendor` (React y los íconos) y `charts` (Recharts y lo que trae).
+- El build sale en tres archivos (`codeSplitting.groups` en `vite.config.js`; `vendor` lleva más prioridad, si no React termina en `charts`): la app, `vendor` (React y los íconos) y `charts` (Recharts y lo que trae).
 
 ## Estructura
 

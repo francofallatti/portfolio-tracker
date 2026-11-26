@@ -19,7 +19,6 @@ Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo h
 Datos seguros:
 
 - [ ] **Escritura atómica y backup**: `writeItems` (`vite.config.js`) pisa el archivo directo. Escribir a un temporal y renombrar, y guardar una copia `.bak` antes de cada escritura.
-- [ ] **Pasar a Vitest 5**: `npm audit` marca dos avisos críticos (tinypool) que solo se van con ese cambio, que es incompatible. Solo afectan al correr tests.
 
 Rendimiento (sin medir, sale de leer el código):
 
@@ -87,6 +86,7 @@ Mantenimiento:
 - [x] **El formulario ya no se cierra al soltar el mouse afuera**: solo cierra si el clic empieza y termina en el fondo, así seleccionar texto en un campo no pierde lo cargado.
 - [x] **Validadores más estrictos**, en `utils/validation.js` con tests: números de verdad (no texto), comisión válida, sin fechas futuras e `id` único en las transacciones (reimportar no duplica).
 - [x] **Dev server protegido:** Vite 5.4.21 y los endpoints de escritura rechazan pedidos de otro origen.
+- [x] **Vitest 5 y Vite 8.** Vitest pasó de 3.2 a 5.1, que pide Vite 6.4 o más nuevo, así que Vite pasó de 5.4 a 8.4 (y `@vitejs/plugin-react` a 6.3). `npm audit` quedó en 0 avisos (antes 5, dos críticos). Piden Node 22.12 o más nuevo.
 - [x] **Tests de `utils/portfolio.js` y `utils/history.js`** con Vitest (`npm test`).
 - [x] **ESLint** con las reglas de hooks de React (`npm run lint`).
 - [x] **Límite de Finnhub:** con muchos símbolos el refresco se espacia (1.5 s por símbolo, como mucho 40 consultas por minuto). Sigue consultando con el mercado cerrado.
