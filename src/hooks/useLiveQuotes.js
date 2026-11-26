@@ -19,16 +19,22 @@ const isStock = (asset) => asset.type === 'stock'
 
 // `quotes` starts with the ones saved on the last visit and takes the live ones as they
 // arrive; `ready` only counts the live ones. Stocks are only quoted with a Finnhub key.
+// `assets` are the ones to quote. The feeds follow their symbols, not the array: editing
+// a name or a color doesn't reconnect the stream or restart the polling.
 export function useLiveQuotes(assets, finnhubKey) {
+  const cryptoKey = assets.filter(isLiveCrypto).map((asset) => asset.symbol).join(',')
+  const stockKey = assets.filter(isStock).map((asset) => asset.symbol).join(',')
   const [savedQuotes] = useState(readSavedQuotes)
   const [quotes, setQuotes] = useState({})
   const lastSave = useRef(0)
   const [cryptoStatus, setCryptoStatus] = useState('connecting')
   const [stockStatus, setStockStatus] = useState('connecting')
+  // The stocks left out of the last refresh, shown next to the status.
+  const [failedStocks, setFailedStocks] = useState([])
 
   useEffect(() => {
-    const symbols = assets.filter(isLiveCrypto).map((asset) => asset.symbol)
-    if (!symbols.length) return
+    if (!cryptoKey) return
+    const symbols = cryptoKey.split(',')
 
     let pending = {}
     let timer = null
@@ -55,30 +61,36 @@ export function useLiveQuotes(assets, finnhubKey) {
       clearTimeout(timer)
       disconnect()
     }
-  }, [assets])
+  }, [cryptoKey])
 
   useEffect(() => {
     if (!finnhubKey) return
 
     setStockStatus('connecting')
-    const symbols = assets.filter(isStock).map((asset) => asset.symbol)
+    const symbols = stockKey ? stockKey.split(',') : []
     const interval = Math.max(STOCK_POLL_INTERVAL, symbols.length * MS_PER_STOCK_REQUEST)
     let timer
     let cancelled = false
 
+    // A symbol that fails keeps its last quote and doesn't hold back the others.
     const refresh = async () => {
-      try {
-        const results = await Promise.all(
-          symbols.map(async (symbol) => [symbol, await fetchStockQuote(symbol)]),
-        )
-        if (cancelled) return
+      const results = await Promise.allSettled(symbols.map(fetchStockQuote))
+      if (cancelled) return
 
-        setQuotes((prev) => ({ ...prev, ...Object.fromEntries(results) }))
-        setStockStatus('live')
-      } catch {
-        if (!cancelled) setStockStatus('error')
-      }
-      if (!cancelled) timer = setTimeout(refresh, interval)
+      const fresh = {}
+      const failed = []
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') fresh[symbols[index]] = result.value
+        else failed.push(symbols[index])
+      })
+      // Kept as it is while the same ones fail, so a refresh doesn't re-render for nothing.
+      setFailedStocks((prev) => (prev.join() === failed.join() ? prev : failed))
+      const quoted = Object.keys(fresh).length
+      if (quoted) setQuotes((prev) => ({ ...prev, ...fresh }))
+      if (quoted === symbols.length) setStockStatus('live')
+      else setStockStatus(quoted ? 'partial' : 'error')
+
+      timer = setTimeout(refresh, interval)
     }
 
     refresh()
@@ -87,7 +99,7 @@ export function useLiveQuotes(assets, finnhubKey) {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [assets, finnhubKey])
+  }, [stockKey, finnhubKey])
 
   const latestQuotes = useMemo(() => ({ ...savedQuotes, ...quotes }), [savedQuotes, quotes])
 
@@ -109,6 +121,7 @@ export function useLiveQuotes(assets, finnhubKey) {
     quotes: latestQuotes,
     cryptoStatus: hasLiveCrypto ? cryptoStatus : 'idle',
     stockStatus: finnhubKey ? stockStatus : 'disabled',
+    failedStocks: finnhubKey ? failedStocks : [],
     ready,
   }
 }

@@ -19,13 +19,11 @@ Qué falta, qué mejorar y en qué orden. Arriba va lo pendiente y al final lo h
 Datos seguros:
 
 - [ ] **Escritura atómica y backup**: `writeItems` (`vite.config.js`) pisa el archivo directo. Escribir a un temporal y renombrar, y guardar una copia `.bak` antes de cada escritura.
-- [ ] **Cotizaciones de acciones frágiles**: en `useLiveQuotes`, si falla un símbolo se descarta toda la tanda (`Promise.all`), y Finnhub devuelve precio 0 para un símbolo desconocido, lo que valuaría la posición en $0. Usar `Promise.allSettled` e ignorar el precio 0.
 - [ ] **Pasar a Vitest 5**: `npm audit` marca dos avisos críticos (tinypool) que solo se van con ese cambio, que es incompatible. Solo afectan al correr tests.
 
 Rendimiento (sin medir, sale de leer el código):
 
-- [ ] **Cambiar un color reconecta el WebSocket** y reinicia el polling: los efectos de `useLiveQuotes` dependen del catálogo entero y no de la lista de símbolos.
-- [ ] **Cotizaciones de activos que no se tienen**: se piden para todo el catálogo, lo que gasta cuota de Finnhub.
+- [ ] **Cotizaciones de activos que no se tienen**: se piden también para las acciones del catálogo sin órdenes, lo que gasta cuota de Finnhub. Las de posiciones cerradas ya no (ver "Hecho").
 
 Mantenimiento:
 
@@ -81,6 +79,9 @@ Mantenimiento:
 
 ### 5. Calidad técnica
 
+- [x] **Las acciones de posiciones cerradas no se cotizan hasta abrir la sección.** Cada una es una consulta a Finnhub por refresco (el plan gratis da 60 por minuto). Al desplegar "Posiciones cerradas" empiezan a cotizar y siguen actualizándose como las demás.
+- [x] **Cambiar un color o un nombre ya no reconecta el WebSocket** ni reinicia las consultas de acciones: `useLiveQuotes` sigue la lista de símbolos, no el catálogo entero.
+- [x] **Cotizaciones de acciones más firmes.** Si una acción no puede cotizar, las demás se actualizan igual y esa sigue con su último precio (antes se descartaba toda la tanda). Un precio 0 de Finnhub (símbolo que no conoce) se ignora en vez de valuar la posición en $0. El estado dice cuál falta: "Acciones: Parcial (sin AAPL)".
 - [x] **Cada cotización de Binance ya no recalcula todo.** Las cotizaciones de cripto se juntan y se aplican cada 2 segundos (antes, una actualización por moneda por segundo). La historia ya no se reconstruye con cada cotización: solo sigue los precios en vivo si a algún activo le faltan precios pasados. `HistoryChart` conserva los puntos pasados y solo cambia el último.
 - [x] **Recharts 3 y bundle partido.** Recharts pasó de 2.13 a 3.11. El build sale en tres archivos (la app, React con los íconos, y los gráficos) y ya no avisa por el tamaño. La torta usa `shape` en vez de `Cell`, que Recharts 4 va a sacar, y no se anima: cada cotización reiniciaba la animación.
 - [x] **El formulario ya no se cierra al soltar el mouse afuera**: solo cierra si el clic empieza y termina en el fondo, así seleccionar texto en un campo no pierde lo cargado.

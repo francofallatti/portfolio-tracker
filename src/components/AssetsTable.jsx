@@ -72,9 +72,24 @@ function sortAssets(assets, { key, direction }) {
 // `assets` and `closedPositions` arrive already filtered by the selected group (`groupKey`).
 // Holdings follow the order picked in the headers (by value at first). Closed positions (sold
 // out) go below, collapsed and the latest closed first, with their realized result in the +/- column.
-export default function AssetsTable({ assets, closedPositions, groupKey, onGroupChange, onAdd, onOpenCatalog, onOpenBackup, onSelect }) {
+// `onShowClosed` is called when the closed positions are expanded (their quotes start then).
+export default function AssetsTable({
+  assets,
+  closedPositions,
+  groupKey,
+  onGroupChange,
+  onShowClosed,
+  onAdd,
+  onOpenCatalog,
+  onOpenBackup,
+  onSelect,
+}) {
   const money = useMoney()
   const [showClosed, setShowClosed] = useState(false)
+  const toggleClosed = () => {
+    if (!showClosed) onShowClosed()
+    setShowClosed(!showClosed)
+  }
   const [sort, setSort] = useState(readSort)
   const closedRealized = closedPositions.reduce((sum, position) => sum + position.realized, 0)
   const sortedAssets = sortAssets(assets, sort)
@@ -209,7 +224,7 @@ export default function AssetsTable({ assets, closedPositions, groupKey, onGroup
             {closedPositions.length > 0 && (
               <tr className="assets__closed">
                 <td colSpan={9}>
-                  <button type="button" aria-expanded={showClosed} onClick={() => setShowClosed((prev) => !prev)}>
+                  <button type="button" aria-expanded={showClosed} onClick={toggleClosed}>
                     {showClosed ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     Posiciones cerradas ({closedPositions.length}) · Realizado{' '}
                     <span className={trendClass(closedRealized)}>{money.formatSigned(closedRealized)}</span>

@@ -32,8 +32,11 @@ export async function isFinnhubKeyAccepted(key) {
   return true
 }
 
+// Finnhub answers a symbol it doesn't know with price 0 instead of an error: taken as
+// a quote, it would value the whole position at $0.
 export async function fetchStockQuote(symbol) {
   const data = await request('/quote', { symbol })
+  if (!(data.c > 0)) throw new Error(`Finnhub has no price for ${symbol}`)
   return { price: data.c, change24h: data.dp }
 }
 
