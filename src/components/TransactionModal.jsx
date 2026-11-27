@@ -4,6 +4,7 @@ import AssetPicker from './AssetPicker.jsx'
 import { useCloseOnEscape } from '../hooks/useCloseOnEscape.js'
 import { toCatalogAsset } from '../services/assetCatalog.js'
 import { fetchCclOn } from '../services/dolarApi.js'
+import { fetchStockQuote, getFinnhubKey } from '../services/finnhubQuotes.js'
 import { formatARS, formatQuantity, formatUSD } from '../utils/format.js'
 import { STABLECOIN, deriveTradeField, fromPesos, roundQuantity, splitRatio, toLocalUnits } from '../utils/portfolio.js'
 
@@ -165,13 +166,31 @@ export default function TransactionModal({
     }
   }
 
-  const selectAsset = pickAsset((entry) => {
+  // A stock of the catalog that isn't held has no live quote (see `quotedAssets`): its
+  // price is asked once, here. If it can't be, the last one known stays. One found in
+  // the market search already comes with its price.
+  const currentPrice = async (entry) => {
+    const inCatalog = assets.some((item) => item.symbol === entry.symbol)
+    const held = holdings.some((item) => item.symbol === entry.symbol)
+    if (entry.type !== 'stock' || !inCatalog || held || !getFinnhubKey()) return entry.price
+    setLoadingAsset(true)
+    try {
+      return (await fetchStockQuote(entry.symbol)).price
+    } catch {
+      return entry.price
+    } finally {
+      setLoadingAsset(false)
+    }
+  }
+
+  const selectAsset = pickAsset(async (entry) => {
     setAsset(entry)
     if (!entry) return
+    const price = await currentPrice(entry)
     setForm((prev) => {
       // A price already calculated from the quantity and the total paid beats the quote.
       if (derivedField(prev) === 'price' && prev.price) return prev
-      return solveTrade({ ...prev, price: entry.price ? String(entry.price) : '' })
+      return solveTrade({ ...prev, price: price ? String(price) : '' })
     })
   })
   const selectPayoutAsset = pickAsset(setPayoutAsset)

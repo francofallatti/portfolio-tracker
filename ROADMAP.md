@@ -20,10 +20,6 @@ Datos seguros:
 
 - [ ] **Escritura atómica y backup**: `writeItems` (`vite.config.js`) pisa el archivo directo. Escribir a un temporal y renombrar, y guardar una copia `.bak` antes de cada escritura.
 
-Rendimiento (sin medir, sale de leer el código):
-
-- [ ] **Cotizaciones de activos que no se tienen**: se piden también para las acciones del catálogo sin órdenes, lo que gasta cuota de Finnhub. Las de posiciones cerradas ya no (ver "Hecho").
-
 Mantenimiento:
 
 - [ ] **Partir `TransactionModal.jsx`** (más de 600 líneas, cinco formularios en uno) por tipo de operación, y pasar los textos de ayuda a una función pura con tests.
@@ -79,6 +75,7 @@ Mantenimiento:
 ### 5. Calidad técnica
 
 - [x] **Las acciones de posiciones cerradas no se cotizan hasta abrir la sección.** Cada una es una consulta a Finnhub por refresco (el plan gratis da 60 por minuto). Al desplegar "Posiciones cerradas" empiezan a cotizar y siguen actualizándose como las demás.
+- [x] **Las acciones del catálogo que no se tienen ya no se cotizan.** Solo cotizan en vivo las acciones con tenencia. Al elegir en el formulario una que no se tiene, su precio se pide una sola vez en ese momento.
 - [x] **Cambiar un color o un nombre ya no reconecta el WebSocket** ni reinicia las consultas de acciones: `useLiveQuotes` sigue la lista de símbolos, no el catálogo entero.
 - [x] **Cotizaciones de acciones más firmes.** Si una acción no puede cotizar, las demás se actualizan igual y esa sigue con su último precio (antes se descartaba toda la tanda). Un precio 0 de Finnhub (símbolo que no conoce) se ignora en vez de valuar la posición en $0. El estado dice cuál falta: "Acciones: Parcial (sin AAPL)".
 - [x] **Cada cotización de Binance ya no recalcula todo.** Las cotizaciones de cripto se juntan y se aplican cada 2 segundos (antes, una actualización por moneda por segundo). La historia ya no se reconstruye con cada cotización: solo sigue los precios en vivo si a algún activo le faltan precios pasados. `HistoryChart` conserva los puntos pasados y solo cambia el último.

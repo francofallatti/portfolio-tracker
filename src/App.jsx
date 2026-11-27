@@ -33,6 +33,7 @@ import {
   getDayChange,
   getResults,
   getTotals,
+  quotedAssets,
   usedSymbols,
 } from './utils/portfolio.js'
 
@@ -68,16 +69,15 @@ export default function App({ initial, keyAsked }) {
   // The range of the history chart: it decides whether the series is hourly or daily.
   const [rangeKey, setRangeKey] = useState('30d')
   const { resolution } = HISTORY_RANGES.find((range) => range.key === rangeKey)
-  // Stocks sold out aren't quoted until their section of the table is opened: each one
-  // is a Finnhub request per refresh, and after years of trading there can be dozens.
-  // Once opened they keep updating like the rest.
+  // Only the stocks held are quoted: each one is a Finnhub request per refresh. The ones
+  // sold out (after years of trading there can be dozens) start when their section of the
+  // table is opened, and then keep updating like the rest.
   const [quoteClosed, setQuoteClosed] = useState(false)
   const startQuotingClosed = useCallback(() => setQuoteClosed(true), [])
-  const quotedCatalog = useMemo(() => {
-    if (quoteClosed) return catalog
-    const closed = new Set(buildClosedPositions(catalog, transactions).map((position) => position.symbol))
-    return catalog.filter((asset) => asset.type !== 'stock' || !closed.has(asset.symbol))
-  }, [quoteClosed, catalog, transactions])
+  const quotedCatalog = useMemo(
+    () => quotedAssets(catalog, transactions, { closed: quoteClosed }),
+    [quoteClosed, catalog, transactions],
+  )
   const { quotes, cryptoStatus, stockStatus, failedStocks, ready } = useLiveQuotes(quotedCatalog, finnhubKey)
   // Everything is kept in dollars; 'ARS' only shows values in pesos at the MEP dollar.
   const [currency, setCurrency] = useState(readCurrency)

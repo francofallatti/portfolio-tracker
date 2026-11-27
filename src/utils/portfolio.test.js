@@ -17,6 +17,7 @@ import {
   getResults,
   getTotals,
   toLocalUnits,
+  quotedAssets,
   usedSymbols,
 } from './portfolio.js'
 
@@ -194,6 +195,30 @@ describe('deriveTradeField', () => {
     expect(deriveTradeField('price', { quantity: 0, total: 1000 })).toBeNull()
     expect(deriveTradeField('quantity', { price: NaN, total: 1000 })).toBeNull()
     expect(deriveTradeField('total', { quantity: 1, price: 0 })).toBeNull()
+  })
+})
+
+describe('quotedAssets', () => {
+  const catalog = [...CATALOG, { symbol: 'MSFT', type: 'stock', price: 400, color: '#666666' }]
+  const symbols = (assets) => assets.map((asset) => asset.symbol)
+
+  it('quotes every crypto, but only the stocks that are held', () => {
+    const transactions = [buy('AAPL', 2, 250)]
+    expect(symbols(quotedAssets(catalog, transactions))).toEqual(['ETH', 'BTC', 'SOL', 'USDT', 'AAPL'])
+    expect(symbols(quotedAssets(catalog, []))).toEqual(['ETH', 'BTC', 'SOL', 'USDT'])
+  })
+
+  it('leaves out the stocks sold out until `closed` asks for them', () => {
+    const transactions = [buy('AAPL', 2, 250), sell('AAPL', 2, 300), buy('MSFT', 1, 400)]
+    expect(symbols(quotedAssets(catalog, transactions))).toEqual(['ETH', 'BTC', 'SOL', 'USDT', 'MSFT'])
+    expect(symbols(quotedAssets(catalog, transactions, { closed: true }))).toEqual([
+      'ETH',
+      'BTC',
+      'SOL',
+      'USDT',
+      'AAPL',
+      'MSFT',
+    ])
   })
 })
 

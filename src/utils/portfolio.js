@@ -256,6 +256,16 @@ export function buildHoldings(assets, savedTransactions) {
   return [...holdings, { ...CASH_ASSET, quantity: Math.max(cashLedger.at(-1).balanceAfter, 0) }]
 }
 
+// The assets that get live quotes. Every crypto does (one stream, no limit), but each
+// stock is a Finnhub request per refresh, so only the ones held are quoted; the ones
+// sold out join them with `closed` (see `quoteClosed` in App), and one that was never
+// traded is asked once, by the transaction form.
+export function quotedAssets(assets, savedTransactions, { closed = false } = {}) {
+  const positions = closed ? buildClosedPositions(assets, savedTransactions) : []
+  const quoted = new Set([...buildHoldings(assets, savedTransactions), ...positions].map((item) => item.symbol))
+  return assets.filter((asset) => asset.type !== 'stock' || quoted.has(asset.symbol))
+}
+
 // Assets that had transactions but are no longer held (sold out), with quantity 0,
 // the realized result and income they left, and the date of their last transaction (`lastDate`).
 export function buildClosedPositions(assets, savedTransactions) {
