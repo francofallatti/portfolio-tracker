@@ -10,8 +10,8 @@ export const MoneyContext = createContext(moneyFormatters(null))
 
 export const useMoney = () => useContext(MoneyContext)
 
-// The MEP and CCL dollars (`{ mep, ccl, updatedAt }`, fetchDollarRates), or null until
-// they load or if they fail. Fetched only while `enabled`, and refreshed every 10 minutes.
+// The CCL dollar (`{ ccl, updatedAt }`, fetchDollarRates), or null until
+// it loads or if it fails. Fetched only while `enabled`, and refreshed every 10 minutes.
 export function useDollarRates(enabled) {
   const [rates, setRates] = useState(null)
   const [failed, setFailed] = useState(false)

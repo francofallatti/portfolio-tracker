@@ -79,7 +79,7 @@ export default function App({ initial, keyAsked }) {
     [quoteClosed, catalog, transactions],
   )
   const { quotes, cryptoStatus, stockStatus, failedStocks, ready } = useLiveQuotes(quotedCatalog, finnhubKey)
-  // Everything is kept in dollars; 'ARS' only shows values in pesos at the MEP dollar.
+  // Everything is kept in dollars; 'ARS' only shows values in pesos.
   const [currency, setCurrency] = useState(readCurrency)
   // Pesos at the CCL dollar: the one CEDEARs follow, so values match the broker's in pesos.
   const dollar = useDollarRates(currency === 'ARS')

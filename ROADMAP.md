@@ -27,7 +27,6 @@ Mantenimiento:
 - [ ] **Colores fijos en los componentes** (por ejemplo `HistoryChart.jsx`) que duplican los tokens de `App.css`.
 - [ ] **Agregar `.gitattributes`**: git avisa de cambios de fin de línea (LF a CRLF) en varios archivos.
 - [ ] **Limpieza chica:**
-  - Quedan comentarios que hablan del MEP (`App.jsx`, `useMoney.js`), y `fetchDollarRates` falla si falta el MEP aunque solo se usa el CCL.
   - "Sin API key (datos de ejemplo)" en `LiveStatus` ya no es cierto: son datos reales con precios guardados.
 
 ### 6. Ideas extra
@@ -74,6 +73,7 @@ Mantenimiento:
 
 ### 5. Calidad técnica
 
+- [x] **El dólar ya no depende del MEP.** `fetchDollarRates` pide solo el CCL, que es el único que se usa (antes fallaba si dolarapi no traía el MEP), y los comentarios que lo nombraban quedaron al día.
 - [x] **Las acciones de posiciones cerradas no se cotizan hasta abrir la sección.** Cada una es una consulta a Finnhub por refresco (el plan gratis da 60 por minuto). Al desplegar "Posiciones cerradas" empiezan a cotizar y siguen actualizándose como las demás.
 - [x] **Las acciones del catálogo que no se tienen ya no se cotizan.** Solo cotizan en vivo las acciones con tenencia. Al elegir en el formulario una que no se tiene, su precio se pide una sola vez en ese momento.
 - [x] **Cambiar un color o un nombre ya no reconecta el WebSocket** ni reinicia las consultas de acciones: `useLiveQuotes` sigue la lista de símbolos, no el catálogo entero.
